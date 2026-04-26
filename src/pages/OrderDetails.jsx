@@ -454,27 +454,29 @@ const OrderDetails = ({ user, userData }) => {
             <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">
               Текущий статус
             </h2>
-            <div className="mb-8 flex justify-center">{getStatusBadge(order)}</div>
+            <div className="mb-8 flex justify-center">{getStatusBadge(order, isAdmin)}</div>
             <div className="space-y-3">
-              {Object.values(ORDER_STATUS).map((status) => (
-                <button
-                  key={status}
-                  onClick={() => handleStatusChange(status)}
-                  className={`w-full text-left px-4 py-4 rounded-xl transition-all font-bold text-sm border-2 min-h-[56px] ${
-                    order.status === status
-                      ? 'bg-stripe-blue/10 border-stripe-blue text-stripe-blue'
-                      : 'bg-stripe-darker border-transparent text-gray-500 hover:text-gray-300 hover:bg-stripe-darker/80'
-                  }`}
-                >
-                  <div className="flex items-center">
-                    <div
-                      className={`w-2 h-2 rounded-full mr-3 ${order.status === status ? 'bg-stripe-blue shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-gray-700'}`}
-                    ></div>
-                    {status}
-                    {order.status === status && <CheckCircle className="w-4 h-4 ml-auto" />}
-                  </div>
-                </button>
-              ))}
+              {Object.values(ORDER_STATUS)
+                .filter((status) => status !== ORDER_STATUS.LASKUTETTU || isAdmin)
+                .map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => handleStatusChange(status)}
+                    className={`w-full text-left px-4 py-4 rounded-xl transition-all font-bold text-sm border-2 min-h-[56px] ${
+                      order.status === status
+                        ? 'bg-stripe-blue/10 border-stripe-blue text-stripe-blue'
+                        : 'bg-stripe-darker border-transparent text-gray-500 hover:text-gray-300 hover:bg-stripe-darker/80'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <div
+                        className={`w-2 h-2 rounded-full mr-3 ${order.status === status ? 'bg-stripe-blue shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-gray-700'}`}
+                      ></div>
+                      {status}
+                      {order.status === status && <CheckCircle className="w-4 h-4 ml-auto" />}
+                    </div>
+                  </button>
+                ))}
             </div>
           </div>
 

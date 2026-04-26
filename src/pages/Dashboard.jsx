@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { orderService, ORDER_STATUS } from '../services/orderService';
+import { userService, USER_ROLES } from '../services/userService';
 import { Car, Clock, Search, Eye, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { getStatusBadge, checkDelay } from '../utils/orderUtils.jsx';
 
 const Dashboard = ({ user, userData, company }) => {
+  const isAdmin = userData?.role === USER_ROLES.ADMIN;
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -65,16 +67,18 @@ const Dashboard = ({ user, userData, company }) => {
           </p>
         </div>
         <div className="flex flex-col md:flex-row gap-4 items-center">
-          <button
-            onClick={() => setShowArchived(!showArchived)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-              showArchived
-                ? 'bg-stripe-blue text-white'
-                : 'bg-white text-stripe-slate border border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            {showArchived ? 'Показать активные' : 'Архив'}
-          </button>
+          {userData?.role === USER_ROLES.ADMIN && (
+            <button
+              onClick={() => setShowArchived(!showArchived)}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                showArchived
+                  ? 'bg-stripe-blue text-white'
+                  : 'bg-white text-stripe-slate border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              {showArchived ? 'Показать активные' : 'Архив'}
+            </button>
+          )}
           <div className="relative group w-full md:w-auto">
             <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-stripe-blue transition-colors" />
             <input
@@ -128,7 +132,7 @@ const Dashboard = ({ user, userData, company }) => {
                     </div>
                   </div>
                   <div className="flex flex-col items-end space-y-1">
-                    {getStatusBadge(order)}
+                    {getStatusBadge(order, isAdmin)}
                     {checkDelay(order)}
                   </div>
                 </div>
@@ -197,7 +201,7 @@ const Dashboard = ({ user, userData, company }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col space-y-1">
-                        {getStatusBadge(order)}
+                        {getStatusBadge(order, isAdmin)}
                         {checkDelay(order)}
                       </div>
                     </td>

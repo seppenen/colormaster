@@ -2,8 +2,21 @@ import React from 'react';
 import { ORDER_STATUS } from '../services/orderService';
 import { AlertTriangle } from 'lucide-react';
 
-export const getStatusBadge = (order) => {
+export const getStatusBadge = (order, isAdmin = false) => {
   const status = typeof order === 'string' ? order : order.status;
+  
+  // If status is Lasku OK but user is not admin, show as Delivered or something else?
+  // User said "Lasku ok status visible only to admin". 
+  // If we just return null or generic, it might be confusing.
+  // But usually "visible only to admin" means exactly that.
+  if (status === ORDER_STATUS.LASKUTETTU && !isAdmin) {
+    return (
+      <span className="stripe-badge bg-purple-100 text-purple-700 font-bold">
+        {ORDER_STATUS.DELIVERED}
+      </span>
+    );
+  }
+
   const isDelayed =
     typeof order === 'object' &&
     order.status === ORDER_STATUS.PENDING &&
