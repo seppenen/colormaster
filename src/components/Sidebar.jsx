@@ -32,7 +32,7 @@ const Sidebar = ({ company, userData, isAdmin, isSidebarOpen, setIsSidebarOpen }
         </div>
         <div>
           <h2 className="text-xl font-bold tracking-tight text-stripe-dark leading-none">
-            ColorMaster
+            Flowly
           </h2>
           {company && (
             <p className="text-[10px] uppercase tracking-wider text-stripe-slate font-bold mt-1">

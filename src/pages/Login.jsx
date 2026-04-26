@@ -36,7 +36,7 @@ const Login = ({ user }) => {
             </div>
           </div>
           <h1 className="text-3xl font-bold mb-2 text-center text-stripe-dark tracking-tight">
-            My Order Management
+            Flowly
           </h1>
           <p className="text-center text-stripe-slate mb-8">Войдите в свою учетную запись</p>
 
