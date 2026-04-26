@@ -19,7 +19,7 @@ const COLLECTION_NAME = 'orders';
 
 export const ORDER_STATUS = {
   PENDING: 'Ожидание',
-  IN_PROGRESS: 'В покраске',
+  IN_PROGRESS: 'В процессе',
   WAITING_PARTS: 'Ждет запчасти',
   READY: 'Готово',
   DELIVERED: 'Отдано',
