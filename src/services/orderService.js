@@ -23,7 +23,7 @@ export const ORDER_STATUS = {
   WAITING_PARTS: 'Ждет запчасти',
   READY: 'Готово',
   DELIVERED: 'Отдано',
-  LASKUTETTU: 'Lasku OK',
+  LASKUTETTU: 'Счет оплачен',
 };
 
 export const orderService = {
