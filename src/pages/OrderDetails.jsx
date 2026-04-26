@@ -128,6 +128,27 @@ const OrderDetails = ({ user, userData }) => {
     window.print();
   };
 
+  const getHistoryText = (item) => {
+    switch (item.action) {
+      case 'ORDER_CREATED':
+        return 'Заказ создан';
+      case 'STATUS_CHANGED':
+        return `Статус изменен: ${item.to}`;
+      case 'PRICE_CHANGED':
+        return `Цена изменена: €${item.from || 0} → €${item.to}`;
+      case 'DETAILS_CHANGED':
+        return 'Детали заказа обновлены';
+      case 'DESCRIPTION_CHANGED':
+        return 'Описание обновлено';
+      case 'PHOTOS_ADDED':
+        return `Добавлено фото: ${item.count}`;
+      case 'PHOTO_DELETED':
+        return 'Фото удалено';
+      default:
+        return item.status || 'Статус обновлен';
+    }
+  };
+
   const handlePhotoUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
@@ -518,7 +539,7 @@ const OrderDetails = ({ user, userData }) => {
                   </div>
                   <div className="flex-1">
                     <p className="text-xs font-bold text-stripe-dark leading-tight">
-                      {item.status || 'Статус обновлен'}
+                      {getHistoryText(item)}
                     </p>
                     <div className="flex items-center mt-1">
                       <p className="text-[10px] text-stripe-slate">{item.userName}</p>
