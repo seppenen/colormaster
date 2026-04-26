@@ -52,7 +52,7 @@ const CreateOrder = ({ user, userData }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await orderService.createOrder(formData, photos, user, userData.companyId);
+      await orderService.createOrder(formData, photos, user, userData.companyId, userData);
       navigate('/');
     } catch (err) {
       console.error(err);

@@ -55,7 +55,7 @@ const OrderDetails = ({ user, userData }) => {
   const handleStatusChange = async (newStatus) => {
     if (newStatus === order.status) return;
     try {
-      await orderService.updateOrderStatus(id, newStatus, user);
+      await orderService.updateOrderStatus(id, newStatus, user, userData);
       const updatedOrder = await orderService.getOrder(id);
       setOrder(updatedOrder);
     } catch (err) {
@@ -67,7 +67,7 @@ const OrderDetails = ({ user, userData }) => {
     const newPrice = prompt('Введите новую цену:', order.price);
     if (newPrice !== null && !isNaN(newPrice)) {
       try {
-        await orderService.updateOrderPrice(id, Number(newPrice), user);
+        await orderService.updateOrderPrice(id, Number(newPrice), user, userData);
         const updatedOrder = await orderService.getOrder(id);
         setOrder(updatedOrder);
       } catch (err) {
@@ -90,7 +90,7 @@ const OrderDetails = ({ user, userData }) => {
 
   const handleSaveDetails = async () => {
     try {
-      await orderService.updateOrderDetails(id, editFormData, user);
+      await orderService.updateOrderDetails(id, editFormData, user, userData);
       const updatedOrder = await orderService.getOrder(id);
       setOrder(updatedOrder);
       setIsEditingDetails(false);
@@ -167,7 +167,7 @@ const OrderDetails = ({ user, userData }) => {
 
     setIsUploadingPhotos(true);
     try {
-      await orderService.addOrderPhotos(id, validFiles, user);
+      await orderService.addOrderPhotos(id, validFiles, user, userData);
       const updatedOrder = await orderService.getOrder(id);
       setOrder(updatedOrder);
     } catch (err) {
@@ -184,7 +184,7 @@ const OrderDetails = ({ user, userData }) => {
 
     if (window.confirm('Удалить эту фотографию?')) {
       try {
-        await orderService.deleteOrderPhoto(id, photoUrl, user);
+        await orderService.deleteOrderPhoto(id, photoUrl, user, userData);
         const updatedOrder = await orderService.getOrder(id);
         setOrder(updatedOrder);
       } catch (err) {
@@ -551,7 +551,7 @@ const OrderDetails = ({ user, userData }) => {
                       {getHistoryText(item)}
                     </p>
                     <div className="flex items-center mt-1">
-                      <p className="text-[10px] text-stripe-slate">{item.userName}</p>
+                      <p className="text-[10px] text-stripe-slate">{item.userName} </p>
                       <span className="mx-1.5 text-gray-300">•</span>
                       <p className="text-[10px] text-stripe-slate">
                         {item.timestamp ? format(item.timestamp.toDate(), 'dd.MM, HH:mm') : ''}

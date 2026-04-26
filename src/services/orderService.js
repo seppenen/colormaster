@@ -27,7 +27,7 @@ export const ORDER_STATUS = {
 };
 
 export const orderService = {
-  async createOrder(orderData, photos, user, companyId) {
+  async createOrder(orderData, photos, user, companyId, userData) {
     const photoUrls = [];
 
     const newOrder = {
@@ -40,7 +40,7 @@ export const orderService = {
           action: 'ORDER_CREATED',
           status: ORDER_STATUS.PENDING,
           userId: user.uid,
-          userName: user.displayName || user.email,
+          userName: userData?.name || user.displayName || user.email,
           timestamp: new Date(),
         },
       ],
@@ -99,7 +99,7 @@ export const orderService = {
     return null;
   },
 
-  async updateOrderStatus(id, newStatus, user) {
+  async updateOrderStatus(id, newStatus, user, userData) {
     const orderRef = doc(db, COLLECTION_NAME, id);
     const orderSnap = await getDoc(orderRef);
     const orderData = orderSnap.data();
@@ -109,7 +109,7 @@ export const orderService = {
       from: orderData.status,
       to: newStatus,
       userId: user.uid,
-      userName: user.displayName || user.email,
+      userName: userData?.name || user.displayName || user.email,
       timestamp: new Date(),
     };
 
@@ -121,7 +121,7 @@ export const orderService = {
     });
   },
 
-  async updateOrderPrice(id, newPrice, user) {
+  async updateOrderPrice(id, newPrice, user, userData) {
     const orderRef = doc(db, COLLECTION_NAME, id);
     const orderSnap = await getDoc(orderRef);
     const orderData = orderSnap.data();
@@ -131,7 +131,7 @@ export const orderService = {
       from: orderData.price,
       to: newPrice,
       userId: user.uid,
-      userName: user.displayName || user.email,
+      userName: userData?.name || user.displayName || user.email,
       timestamp: new Date(),
     };
 
@@ -142,7 +142,7 @@ export const orderService = {
     });
   },
 
-  async updateOrderDescription(id, newDescription, user) {
+  async updateOrderDescription(id, newDescription, user, userData) {
     const orderRef = doc(db, COLLECTION_NAME, id);
     const orderSnap = await getDoc(orderRef);
     const orderData = orderSnap.data();
@@ -150,7 +150,7 @@ export const orderService = {
     const historyEntry = {
       action: 'DESCRIPTION_CHANGED',
       userId: user.uid,
-      userName: user.displayName || user.email,
+      userName: userData?.name || user.displayName || user.email,
       timestamp: new Date(),
     };
 
@@ -161,7 +161,7 @@ export const orderService = {
     });
   },
 
-  async updateOrderDetails(id, details, user) {
+  async updateOrderDetails(id, details, user, userData) {
     const orderRef = doc(db, COLLECTION_NAME, id);
     const orderSnap = await getDoc(orderRef);
     const orderData = orderSnap.data();
@@ -169,7 +169,7 @@ export const orderService = {
     const historyEntry = {
       action: 'DETAILS_CHANGED',
       userId: user.uid,
-      userName: user.displayName || user.email,
+      userName: userData?.name || user.displayName || user.email,
       timestamp: new Date(),
     };
 
@@ -180,7 +180,7 @@ export const orderService = {
     });
   },
 
-  async addOrderPhotos(id, photos, user) {
+  async addOrderPhotos(id, photos, user, userData) {
     const orderRef = doc(db, COLLECTION_NAME, id);
     const orderSnap = await getDoc(orderRef);
     const orderData = orderSnap.data();
@@ -198,7 +198,7 @@ export const orderService = {
       action: 'PHOTOS_ADDED',
       count: photos.length,
       userId: user.uid,
-      userName: user.displayName || user.email,
+      userName: userData?.name || user.displayName || user.email,
       timestamp: new Date(),
     };
 
@@ -213,7 +213,7 @@ export const orderService = {
     return uploadedUrls;
   },
 
-  async deleteOrderPhoto(id, photoUrl, user) {
+  async deleteOrderPhoto(id, photoUrl, user, userData) {
     const orderRef = doc(db, COLLECTION_NAME, id);
     const orderSnap = await getDoc(orderRef);
     const orderData = orderSnap.data();
@@ -234,7 +234,7 @@ export const orderService = {
     const historyEntry = {
       action: 'PHOTO_DELETED',
       userId: user.uid,
-      userName: user.displayName || user.email,
+      userName: userData?.name || user.displayName || user.email,
       timestamp: new Date(),
     };
 
