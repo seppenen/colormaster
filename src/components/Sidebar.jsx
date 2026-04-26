@@ -45,7 +45,7 @@ const Sidebar = ({ company, userData, isAdmin, isSidebarOpen, setIsSidebarOpen }
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
         <Link to="/" onClick={() => setIsSidebarOpen(false)} className={navLinkClasses('/')}>
           <LayoutDashboard className="w-5 h-5 mr-3" />
-          Панель управления
+          Центр заказов
         </Link>
         <Link
           to="/create-order"
