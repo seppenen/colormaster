@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { orderService, ORDER_STATUS } from '../services/orderService';
 import { USER_ROLES } from '../services/userService';
@@ -571,23 +572,24 @@ const OrderDetails = ({ user, userData }) => {
       </div>
 
       {/* Photo Modal */}
-      {selectedPhoto && (
+      {selectedPhoto && createPortal(
         <div
-          className="fixed inset-0 bg-stripe-dark/95 z-50 flex items-center justify-center p-4 md:p-12 animate-in fade-in duration-300"
+          className="fixed inset-0 bg-stripe-dark/95 z-[9999] flex items-center justify-center p-4 md:p-12 animate-in fade-in duration-300"
           onClick={() => setSelectedPhoto(null)}
         >
           <button
-            className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors"
+            className="absolute top-6 right-6 text-white/50 hover:text-white transition-colors z-[10000]"
             onClick={() => setSelectedPhoto(null)}
           >
             <X className="w-10 h-10" />
           </button>
           <img
             src={selectedPhoto}
-            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-in zoom-in duration-300"
+            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl animate-in zoom-in duration-300 relative z-[10000]"
             alt="Enlarged order photo"
           />
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
