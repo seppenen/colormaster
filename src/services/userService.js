@@ -1,11 +1,22 @@
-import { doc, getDoc, setDoc, updateDoc, collection, getDocs, deleteDoc, serverTimestamp, query, where } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  collection,
+  getDocs,
+  deleteDoc,
+  serverTimestamp,
+  query,
+  where,
+} from 'firebase/firestore';
 import { db } from './firebase';
 
 const COLLECTION_NAME = 'users';
 
 export const USER_ROLES = {
-  ADMIN: "admin",
-  EMPLOYEE: "employee"
+  ADMIN: 'admin',
+  EMPLOYEE: 'employee',
 };
 
 export const userService = {
@@ -24,7 +35,7 @@ export const userService = {
       ...userData,
       isActive: true,
       createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      updatedAt: serverTimestamp(),
     };
     await setDoc(docRef, newUser);
     return newUser;
@@ -32,24 +43,21 @@ export const userService = {
 
   async getAllUsers(companyId) {
     if (!companyId) return [];
-    const q = query(
-      collection(db, COLLECTION_NAME), 
-      where('companyId', '==', companyId)
-    );
+    const q = query(collection(db, COLLECTION_NAME), where('companyId', '==', companyId));
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+    return querySnapshot.docs.map((doc) => ({ uid: doc.id, ...doc.data() }));
   },
 
   async updateUser(uid, updateData) {
     const docRef = doc(db, COLLECTION_NAME, uid);
     await updateDoc(docRef, {
       ...updateData,
-      updatedAt: serverTimestamp()
+      updatedAt: serverTimestamp(),
     });
   },
 
   async deleteUser(uid) {
     const docRef = doc(db, COLLECTION_NAME, uid);
     await deleteDoc(docRef);
-  }
+  },
 };

@@ -1,11 +1,4 @@
-import { 
-  collection, 
-  addDoc, 
-  updateDoc, 
-  doc, 
-  getDoc, 
-  serverTimestamp 
-} from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './firebase';
 
 const COLLECTION_NAME = 'companies';
@@ -26,7 +19,7 @@ export const companyService = {
       ...companyData,
       ownerUid,
       createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
+      updatedAt: serverTimestamp(),
     };
 
     const docRef = await addDoc(collection(db, COLLECTION_NAME), newCompany);
@@ -37,7 +30,7 @@ export const companyService = {
     const docRef = doc(db, COLLECTION_NAME, id);
     await updateDoc(docRef, {
       ...updateData,
-      updatedAt: serverTimestamp()
+      updatedAt: serverTimestamp(),
     });
-  }
+  },
 };

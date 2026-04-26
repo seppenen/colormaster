@@ -7,7 +7,10 @@
  * @param {number} options.quality - Качество (0.1 - 1.0).
  * @returns {Promise<Blob>} - Сжатое изображение в виде Blob.
  */
-export const compressImage = (file, options = { maxWidth: 1200, maxHeight: 1200, quality: 0.7 }) => {
+export const compressImage = (
+  file,
+  options = { maxWidth: 1200, maxHeight: 1200, quality: 0.7 }
+) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
