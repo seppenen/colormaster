@@ -41,7 +41,6 @@ export const initializeCollections = async () => {
     // 3. Создаем тестовый заказ
     const ordersRef = collection(db, 'orders');
     const sampleOrder = {
-      orderNumber: "CM-2026-INIT",
       carModel: "Tesla Model 3",
       carNumber: "ABC-123",
       clientName: "Тестовый Клиент",

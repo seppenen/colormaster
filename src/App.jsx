@@ -76,7 +76,7 @@ const CreateCompany = ({ user, onCompanyCreated }) => {
           </div>
           <button 
             type="submit" 
-            className="w-full stripe-button-primary py-3 text-lg"
+            className="w-full stripe-button-primary py-3"
             disabled={loading}
           >
             {loading ? 'Создание...' : 'Создать и продолжить'}
@@ -162,7 +162,7 @@ const Login = ({ user }) => {
               required
             />
           </div>
-          <button type="submit" className="w-full stripe-button-primary py-3 text-lg mb-4">
+          <button type="submit" className="w-full stripe-button-primary py-3 mb-4">
             Войти
           </button>
         </form>
@@ -209,8 +209,7 @@ const Dashboard = ({ user, userData, company }) => {
       order.carModel?.toLowerCase().includes(searchLower) ||
       order.carNumber?.toLowerCase().includes(searchLower) ||
       order.clientName?.toLowerCase().includes(searchLower) ||
-      order.clientPhone?.toLowerCase().includes(searchLower) ||
-      order.orderNumber?.toLowerCase().includes(searchLower)
+      order.clientPhone?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -310,9 +309,6 @@ const Dashboard = ({ user, userData, company }) => {
                       <div className="text-[10px] text-stripe-slate font-mono uppercase tracking-wider">{order.carNumber || 'БЕЗ НОМЕРА'}</div>
                     </div>
                   </div>
-                  <div className="text-[10px] font-bold text-stripe-slate bg-gray-100 px-2 py-1 rounded">
-                    {order.orderNumber}
-                  </div>
                 </div>
                 
                 <div className="flex justify-between items-end mt-4">
@@ -338,7 +334,6 @@ const Dashboard = ({ user, userData, company }) => {
           <table className="min-w-full divide-y divide-gray-100">
             <thead>
               <tr className="bg-gray-50/50">
-                <th className="px-6 py-4 text-left text-xs font-bold text-stripe-slate uppercase tracking-widest">Заказ</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-stripe-slate uppercase tracking-widest">Автомобиль</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-stripe-slate uppercase tracking-widest">Клиент</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-stripe-slate uppercase tracking-widest">Статус</th>
@@ -349,7 +344,7 @@ const Dashboard = ({ user, userData, company }) => {
             <tbody className="bg-white divide-y divide-gray-100">
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-stripe-slate">
+                  <td colSpan="5" className="px-6 py-12 text-center text-stripe-slate">
                     <div className="flex flex-col items-center">
                       <Search className="w-8 h-8 text-gray-200 mb-2" />
                       <p>Заказы не найдены</p>
@@ -359,12 +354,6 @@ const Dashboard = ({ user, userData, company }) => {
               ) : (
                 filteredOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-stripe-light/50 transition-colors group cursor-pointer" onClick={() => navigate(`/order/${order.id}`)}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-bold text-stripe-blue group-hover:underline">{order.orderNumber}</div>
-                      <div className="text-[11px] text-stripe-slate mt-0.5 uppercase font-medium tracking-tighter">
-                        {order.createdAt ? format(order.createdAt.toDate(), 'dd MMM yyyy', { locale: ru }) : ''}
-                      </div>
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="p-2 bg-gray-50 rounded-md mr-3 border border-gray-100 group-hover:bg-white transition-colors">
@@ -763,15 +752,15 @@ const OrderDetails = ({ user, userData }) => {
             <ClipboardList className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-stripe-dark">Заказ {order.orderNumber}</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-stripe-dark">Детали</h1>
             <p className="text-stripe-slate text-sm">Создан {order.createdAt ? format(order.createdAt.toDate(), 'dd MMMM yyyy HH:mm', { locale: ru }) : ''}</p>
           </div>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-col sm:flex-row items-center gap-3">
           {isAdmin && (
             <button 
               onClick={handleDeleteOrder}
-              className="stripe-button-secondary border-red-100 text-red-600 hover:bg-red-50 flex items-center"
+              className="stripe-button-secondary border-red-100 text-red-600 hover:bg-red-50 flex items-center w-full sm:w-auto px-4 py-2"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               Удалить
@@ -779,7 +768,7 @@ const OrderDetails = ({ user, userData }) => {
           )}
           <button 
             onClick={handlePrint}
-            className="stripe-button-secondary flex items-center"
+            className="stripe-button-secondary flex items-center w-full sm:w-auto px-4 py-2"
           >
             <Printer className="w-4 h-4 mr-2" />
             Печать
@@ -792,7 +781,6 @@ const OrderDetails = ({ user, userData }) => {
         <div className="lg:col-span-2 space-y-8">
           <div className="stripe-card p-8 print:border-none print:shadow-none">
             <h2 className="text-xl font-bold mb-6 text-stripe-dark flex items-center">
-              <Car className="w-5 h-5 mr-2 text-stripe-blue" />
               Информация об автомобиле и клиенте
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
@@ -820,9 +808,9 @@ const OrderDetails = ({ user, userData }) => {
                 {!isEditingDescription && (
                   <button 
                     onClick={handleDescriptionEdit}
-                    className="stripe-button-secondary px-6 py-2.5 text-sm font-bold uppercase tracking-widest"
+                    className="stripe-button-secondary px-4 py-2 text-sm"
                   >
-                    Изменить описание
+                    Изменить
                   </button>
                 )}
               </div>
@@ -837,13 +825,13 @@ const OrderDetails = ({ user, userData }) => {
                   <div className="flex justify-end space-x-3">
                     <button 
                       onClick={() => setIsEditingDescription(false)}
-                      className="px-4 py-2 text-xs font-bold text-stripe-slate hover:text-stripe-dark transition-colors uppercase tracking-widest"
+                      className="stripe-button-secondary px-4 py-2 text-xs"
                     >
                       Отмена
                     </button>
                     <button 
                       onClick={handleDescriptionSave}
-                      className="px-4 py-2 text-xs font-bold bg-stripe-blue text-white rounded-lg hover:bg-stripe-blue/90 transition-colors shadow-stripe-sm uppercase tracking-widest"
+                      className="stripe-button-primary px-4 py-2 text-xs"
                     >
                       Сохранить
                     </button>
@@ -870,18 +858,17 @@ const OrderDetails = ({ user, userData }) => {
           <div className="stripe-card p-8 print:hidden">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-bold text-stripe-dark flex items-center">
-                <Camera className="w-5 h-5 mr-2 text-stripe-blue" />
                 Фотографии
               </h2>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
                 <span className="text-xs font-bold text-stripe-slate bg-gray-100 px-2 py-1 rounded-md">{order.photos?.length || 0} фото</span>
-                <label className={`cursor-pointer flex items-center text-xs font-bold text-white bg-stripe-blue px-3 py-1.5 rounded-lg hover:bg-stripe-blue/90 transition-all ${isUploadingPhotos ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                <label className={`cursor-pointer stripe-button-primary px-3 py-1.5 text-xs ${isUploadingPhotos ? 'opacity-50 cursor-not-allowed' : ''} min-h-[36px]`}>
                   {isUploadingPhotos ? (
                     <div className="animate-spin rounded-full h-3 w-3 border-t-2 border-white mr-2"></div>
                   ) : (
                     <PlusCircle className="w-3.5 h-3.5 mr-1.5" />
                   )}
-                  {isUploadingPhotos ? 'Загрузка...' : 'Добавить'}
+                  {isUploadingPhotos ? '...' : 'Добавить'}
                   <input 
                     type="file" 
                     multiple 
@@ -926,7 +913,7 @@ const OrderDetails = ({ user, userData }) => {
         {/* Right Column: Status & Price */}
         <div className="space-y-8 print:hidden">
           <div className="stripe-card p-8 bg-stripe-dark">
-            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Статус заказа</h2>
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">Текущий статус</h2>
             <div className="mb-8 flex justify-center">
               {getStatusBadge(order)}
             </div>
@@ -935,7 +922,7 @@ const OrderDetails = ({ user, userData }) => {
                 <button
                   key={status}
                   onClick={() => handleStatusChange(status)}
-                  className={`w-full text-left px-4 py-3 rounded-xl transition-all font-bold text-sm border-2 ${
+                  className={`w-full text-left px-4 py-4 rounded-xl transition-all font-bold text-sm border-2 min-h-[56px] ${
                     order.status === status 
                       ? 'bg-stripe-blue border-stripe-blue text-white shadow-stripe' 
                       : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10 hover:border-white/10'
@@ -959,7 +946,7 @@ const OrderDetails = ({ user, userData }) => {
               </div>
               <button 
                 onClick={handlePriceChange}
-                className="mt-6 w-full stripe-button-secondary py-4 text-base font-bold"
+                className="mt-6 w-full stripe-button-secondary py-3 text-sm md:text-base font-bold"
               >
                 Изменить цену
               </button>
@@ -1025,7 +1012,7 @@ const OrderDetails = ({ user, userData }) => {
       {/* Print View (hidden normally) */}
       <div className="hidden print:block print:bg-white print:text-black">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold uppercase tracking-widest">Договор / заказ-наряд № {order.orderNumber}</h1>
+          <h1 className="text-2xl font-bold uppercase tracking-widest">Договор / заказ-наряд</h1>
         </div>
 
         <div className="grid grid-cols-2 gap-8 mb-8 border-b pb-8">
@@ -1185,20 +1172,20 @@ const UserManagement = ({ userData }) => {
                     {u.isActive !== false ? 'Активен' : 'Заблокирован'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2 items-center">
                   <button 
                     onClick={() => toggleUserStatus(u.uid, u.isActive !== false)}
-                    className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-md transition-all ${
+                    className={`text-xs font-bold uppercase tracking-wider px-3 py-2 rounded-md transition-all border min-h-[36px] ${
                       u.isActive !== false 
-                        ? 'text-red-500 hover:bg-red-50' 
-                        : 'text-emerald-600 hover:bg-emerald-50'
+                        ? 'text-red-500 border-red-100 hover:bg-red-50' 
+                        : 'text-emerald-600 border-emerald-100 hover:bg-emerald-50'
                     }`}
                   >
-                    {u.isActive !== false ? 'Заблокировать' : 'Разблокировать'}
+                    {u.isActive !== false ? 'Блок' : 'Разблок'}
                   </button>
                   <button 
                     onClick={() => handleDeleteUser(u.uid)}
-                    className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
+                    className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all border border-transparent hover:border-red-100 min-h-[36px]"
                     title="Удалить из базы"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -1261,16 +1248,17 @@ const UserManagement = ({ userData }) => {
                   <option value={USER_ROLES.ADMIN}>Администратор</option>
                 </select>
               </div>
-              <div className="flex gap-4 pt-4">
+              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-100">
                 <button 
-                  type="button" onClick={() => setShowAddModal(false)}
-                  className="stripe-button-secondary flex-1"
+                  type="button" 
+                  onClick={() => setShowAddModal(false)}
+                  className="stripe-button-secondary w-full"
                 >
                   Отмена
                 </button>
                 <button 
-                  type="submit"
-                  className="stripe-button-primary flex-1"
+                  type="submit" 
+                  className="stripe-button-primary w-full"
                 >
                   Создать
                 </button>

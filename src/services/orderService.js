@@ -27,13 +27,9 @@ export const ORDER_STATUS = {
 
 export const orderService = {
   async createOrder(orderData, photos, user, companyId) {
-    const orderNumber = `CM-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
-    
     const photoUrls = [];
-    // Upload photos logic should be here, but usually we do it in a loop
     
     const newOrder = {
-      orderNumber,
       ...orderData,
       companyId,
       status: ORDER_STATUS.PENDING,

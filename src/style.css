@@ -22,11 +22,11 @@
   }
   
   .stripe-button-primary {
-    @apply bg-stripe-blue text-white px-4 py-2 rounded-md font-semibold shadow-stripe-sm hover:bg-stripe-purple transition-all active:scale-[0.98] disabled:opacity-50;
+    @apply bg-stripe-blue text-white px-6 py-2.5 rounded-lg font-bold shadow-stripe-sm hover:bg-stripe-purple transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center text-sm md:text-base min-h-[44px];
   }
   
   .stripe-button-secondary {
-    @apply bg-white text-stripe-slate border border-gray-200 px-4 py-2 rounded-md font-semibold shadow-stripe-sm hover:border-gray-300 transition-all active:scale-[0.98];
+    @apply bg-white text-stripe-slate border border-gray-200 px-6 py-2.5 rounded-lg font-bold shadow-stripe-sm hover:border-gray-300 transition-all active:scale-[0.98] flex items-center justify-center text-sm md:text-base min-h-[44px];
   }
 
   .stripe-badge {
