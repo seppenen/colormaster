@@ -480,22 +480,22 @@ const OrderDetails = ({ user, userData }) => {
             </div>
           </div>
 
-          <div className="stripe-card p-8 bg-white overflow-hidden relative group">
-            <div className="absolute top-0 right-0 p-4">
-              <div className="bg-emerald-50 p-2 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-emerald-500" />
+          {isAdmin && (
+            <div className="stripe-card p-8 bg-white overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-4">
+                <div className="bg-emerald-50 p-2 rounded-lg">
+                  <CheckCircle className="w-5 h-5 text-emerald-500" />
+                </div>
               </div>
-            </div>
-            <h2 className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest mb-1">
-              Сумма заказа
-            </h2>
-            <div className="flex items-baseline group-hover:scale-[1.02] transition-transform origin-left">
-              <span className="text-4xl font-black text-stripe-dark">€{order.price || '0'}</span>
-              <span className="ml-2 text-xs font-bold text-stripe-slate uppercase tracking-wider">
-                EUR
-              </span>
-            </div>
-            {isAdmin && (
+              <h2 className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest mb-1">
+                Сумма заказа
+              </h2>
+              <div className="flex items-baseline group-hover:scale-[1.02] transition-transform origin-left">
+                <span className="text-4xl font-black text-stripe-dark">€{order.price || '0'}</span>
+                <span className="ml-2 text-xs font-bold text-stripe-slate uppercase tracking-wider">
+                  EUR
+                </span>
+              </div>
               <button
                 onClick={handlePriceChange}
                 className="mt-6 text-stripe-blue text-xs font-bold hover:underline flex items-center"
@@ -503,8 +503,8 @@ const OrderDetails = ({ user, userData }) => {
                 <Edit2 className="w-3 h-3 mr-1" />
                 Изменить сумму
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           <div className="stripe-card p-6 bg-gray-50/50 border-dashed">
             <h2 className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest mb-4">
