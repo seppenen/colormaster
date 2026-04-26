@@ -532,7 +532,13 @@ const OrderDetails = ({ user, userData }) => {
               История изменений
             </h2>
             <div className="space-y-6">
-              {(showHistory ? order.history : order.history?.slice(-3)).map((item, index) => (
+              {((showHistory ? order.history : order.history?.slice(0, 3)) || [])
+                .sort((a, b) => {
+                  const timeA = a.timestamp?.seconds || 0;
+                  const timeB = b.timestamp?.seconds || 0;
+                  return timeB - timeA;
+                })
+                .map((item, index) => (
                 <div key={index} className="flex items-start">
                   <div className="mt-1 bg-white p-1.5 rounded-full border border-gray-100 shadow-sm mr-3">
                     <Clock className="w-3 h-3 text-stripe-blue" />
