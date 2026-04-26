@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#f6f9fc] text-[#425466] font-sans antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-[#0a2540] font-semibold;
+  }
+}
+
+@layer components {
+  .stripe-card {
+    @apply bg-white rounded-lg shadow-stripe border border-gray-100;
+  }
+  
+  .stripe-input {
+    @apply w-full px-3 py-2 bg-white border border-gray-200 rounded-md shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-stripe-blue focus:border-transparent placeholder-gray-400;
+  }
+  
+  .stripe-button-primary {
+    @apply bg-stripe-blue text-white px-4 py-2 rounded-md font-semibold shadow-stripe-sm hover:bg-stripe-purple transition-all active:scale-[0.98] disabled:opacity-50;
+  }
+  
+  .stripe-button-secondary {
+    @apply bg-white text-stripe-slate border border-gray-200 px-4 py-2 rounded-md font-semibold shadow-stripe-sm hover:border-gray-300 transition-all active:scale-[0.98];
+  }
+
+  .stripe-badge {
+    @apply px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider;
+  }
+}
+
+@media print {
+  .print\:hidden {
+    display: none !important;
+  }
+  .print\:block {
+    display: block !important;
+  }
+  body {
+    background: white !important;
+  }
+}
