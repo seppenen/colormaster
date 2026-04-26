@@ -5,7 +5,6 @@ import { auth, secondaryAuth } from './services/firebase';
 import { userService, USER_ROLES } from './services/userService';
 import { orderService, ORDER_STATUS } from './services/orderService';
 import { companyService } from './services/companyService';
-import { initializeCollections } from './initDb';
 import { useParams } from 'react-router-dom';
 import { LayoutDashboard, PlusCircle, Users as UsersIcon, LogOut, Car, ClipboardList, Clock, Search, Printer, Trash2, Camera, X, CheckCircle, AlertTriangle, Eye, Menu } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -91,7 +90,6 @@ const Login = ({ user }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [initStatus, setInitStatus] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -99,17 +97,6 @@ const Login = ({ user }) => {
       navigate('/');
     }
   }, [user, navigate]);
-
-  const handleInitCollections = async () => {
-    setInitStatus('Инициализация...');
-    const success = await initializeCollections();
-    if (success) {
-      setInitStatus('Готово! Коллекции созданы.');
-      setTimeout(() => setInitStatus(''), 3000);
-    } else {
-      setInitStatus('Ошибка инициализации.');
-    }
-  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -130,7 +117,7 @@ const Login = ({ user }) => {
               <Car className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold mb-2 text-center text-stripe-dark tracking-tight">ColorMaster</h1>
+          <h1 className="text-3xl font-bold mb-2 text-center text-stripe-dark tracking-tight">My Order Management</h1>
           <p className="text-center text-stripe-slate mb-8">Войдите в свою учетную запись</p>
           
           {error && (
@@ -166,17 +153,6 @@ const Login = ({ user }) => {
             Войти
           </button>
         </form>
-
-        <div className="mt-8 pt-6 border-t border-gray-100">
-          <p className="text-xs text-center text-stripe-slate mb-3">Технический раздел (только для первого запуска)</p>
-          <button 
-            type="button" 
-            onClick={handleInitCollections}
-            className="w-full text-xs font-bold text-stripe-blue hover:text-stripe-purple transition-colors py-2 border border-dashed border-gray-200 rounded-md"
-          >
-            {initStatus || 'Инициализировать базу данных (создать коллекции)'}
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -408,7 +384,7 @@ const CreateOrder = ({ user, userData }) => {
     clientName: '',
     clientPhone: '',
     description: '',
-    price: 0,
+    price: '',
     comment: ''
   });
 
@@ -584,6 +560,7 @@ const CreateOrder = ({ user, userData }) => {
 
 const OrderDetails = ({ user, userData }) => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showHistory, setShowHistory] = useState(false);
@@ -1222,7 +1199,7 @@ const UserManagement = ({ userData }) => {
                 <input 
                   type="email" required
                   className="stripe-input"
-                  placeholder="email@colormaster.ru"
+                  placeholder="email@mail.com"
                   value={newUserData.email}
                   onChange={(e) => setNewUserData({...newUserData, email: e.target.value})}
                 />
