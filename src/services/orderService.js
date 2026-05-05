@@ -19,11 +19,11 @@ const COLLECTION_NAME = 'orders';
 
 export const ORDER_STATUS = {
   PENDING: 'Ожидание',
-  IN_PROGRESS: 'В процессе',
   WAITING_PARTS: 'Ждет запчасти',
+  IN_PROGRESS: 'В работе',
   READY: 'Готово',
   DELIVERED: 'Отдано',
-  LASKUTETTU: 'Счет оплачен',
+  LASKUTETTU: 'Lasku OK',
 };
 
 export const orderService = {
