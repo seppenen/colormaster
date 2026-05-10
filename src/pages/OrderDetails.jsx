@@ -14,6 +14,7 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
+  Euro,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -68,6 +69,19 @@ const OrderDetails = ({ user, userData }) => {
     if (newPrice !== null && !isNaN(newPrice)) {
       try {
         await orderService.updateOrderPrice(id, Number(newPrice), user, userData);
+        const updatedOrder = await orderService.getOrder(id);
+        setOrder(updatedOrder);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const handleWorkerPriceChange = async () => {
+    const newPrice = prompt('Введите зарплату работника:', order.workerPrice || '0');
+    if (newPrice !== null && !isNaN(newPrice)) {
+      try {
+        await orderService.updateWorkerPrice(id, Number(newPrice), user, userData);
         const updatedOrder = await orderService.getOrder(id);
         setOrder(updatedOrder);
       } catch (err) {
@@ -137,6 +151,8 @@ const OrderDetails = ({ user, userData }) => {
         return `Статус изменен: ${item.to}`;
       case 'PRICE_CHANGED':
         return `Цена изменена: €${item.from || 0} → €${item.to}`;
+      case 'WORKER_PRICE_CHANGED':
+        return `Зарплата работника изменена: €${item.from || 0} → €${item.to}`;
       case 'DETAILS_CHANGED':
         return 'Детали заказа обновлены';
       case 'DESCRIPTION_CHANGED':
@@ -485,12 +501,13 @@ const OrderDetails = ({ user, userData }) => {
                 .map((status) => (
                   <button
                     key={status}
+                    disabled={!isAdmin && status === ORDER_STATUS.LASKUTETTU}
                     onClick={() => handleStatusChange(status)}
                     className={`w-full text-left px-4 py-4 rounded-xl transition-all font-bold text-sm border-2 min-h-[56px] ${
                       order.status === status
                         ? 'bg-stripe-blue/10 border-stripe-blue text-stripe-blue'
                         : 'bg-stripe-darker border-transparent text-gray-500 hover:text-gray-300 hover:bg-stripe-darker/80'
-                    }`}
+                    } ${!isAdmin && status === ORDER_STATUS.LASKUTETTU ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center">
                       <div
@@ -504,31 +521,59 @@ const OrderDetails = ({ user, userData }) => {
             </div>
           </div>
 
-          {isAdmin && (
+          <div className="space-y-4">
+            {isAdmin && (
+              <div className="stripe-card p-8 bg-white overflow-hidden relative group">
+                <div className="absolute top-0 right-0 p-4">
+                  <div className="bg-emerald-50 p-2 rounded-lg">
+                    <CheckCircle className="w-5 h-5 text-emerald-500" />
+                  </div>
+                </div>
+                <h2 className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest mb-1">
+                  Сумма заказа
+                </h2>
+                <div className="flex items-baseline group-hover:scale-[1.02] transition-transform origin-left">
+                  <span className="text-4xl font-black text-stripe-dark">€{order.price || '0'}</span>
+                  <span className="ml-2 text-xs font-bold text-stripe-slate uppercase tracking-wider">
+                    EUR
+                  </span>
+                </div>
+                <button
+                  onClick={handlePriceChange}
+                  className="mt-6 text-stripe-blue text-xs font-bold hover:underline flex items-center"
+                >
+                  <Edit2 className="w-3 h-3 mr-1" />
+                  Изменить сумму
+                </button>
+              </div>
+            )}
+
             <div className="stripe-card p-8 bg-white overflow-hidden relative group">
               <div className="absolute top-0 right-0 p-4">
-                <div className="bg-emerald-50 p-2 rounded-lg">
-                  <CheckCircle className="w-5 h-5 text-emerald-500" />
+                <div className="bg-blue-50 p-2 rounded-lg">
+                  {isAdmin ? <Edit2 className="w-5 h-5 text-blue-500" /> : <Euro className="w-5 h-5 text-blue-500" />}
                 </div>
               </div>
               <h2 className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest mb-1">
-                Сумма заказа
+                Зарплата работника
               </h2>
               <div className="flex items-baseline group-hover:scale-[1.02] transition-transform origin-left">
-                <span className="text-4xl font-black text-stripe-dark">€{order.price || '0'}</span>
+                <span className="text-4xl font-black text-stripe-dark">€{order.workerPrice || '0'}</span>
                 <span className="ml-2 text-xs font-bold text-stripe-slate uppercase tracking-wider">
                   EUR
                 </span>
               </div>
-              <button
-                onClick={handlePriceChange}
-                className="mt-6 text-stripe-blue text-xs font-bold hover:underline flex items-center"
-              >
-                <Edit2 className="w-3 h-3 mr-1" />
-                Изменить сумму
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={handleWorkerPriceChange}
+                  className="mt-6 text-stripe-blue text-xs font-bold hover:underline flex items-center"
+                >
+                  <Edit2 className="w-3 h-3 mr-1" />
+                  Изменить зарплату
+                </button>
+              )}
             </div>
-          )}
+          </div>
 
           <div className="stripe-card p-6 bg-gray-50/50 border-dashed">
             <h2 className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest mb-4">

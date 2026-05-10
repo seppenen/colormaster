@@ -16,6 +16,7 @@ import Dashboard from './pages/Dashboard';
 import CreateOrder from './pages/CreateOrder';
 import OrderDetails from './pages/OrderDetails';
 import Users from './pages/Users';
+import Reporting from './pages/Reporting';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -133,6 +134,23 @@ function App() {
                 isAdmin={userData?.role === USER_ROLES.ADMIN}
               >
                 <Users userData={userData} />
+              </Layout>
+            ) : (
+              <Navigate to="/" />
+            )
+          }
+        />
+
+        <Route
+          path="/reporting"
+          element={
+            user && company && userData?.role === USER_ROLES.ADMIN ? (
+              <Layout
+                company={company}
+                userData={userData}
+                isAdmin={userData?.role === USER_ROLES.ADMIN}
+              >
+                <Reporting userData={userData} />
               </Layout>
             ) : (
               <Navigate to="/" />

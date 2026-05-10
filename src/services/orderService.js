@@ -20,6 +20,7 @@ const COLLECTION_NAME = 'orders';
 export const ORDER_STATUS = {
   PENDING: 'Ожидание',
   WAITING_PARTS: 'Ждет запчасти',
+  AVAITING_WORK: 'Готова к работе',
   IN_PROGRESS: 'В работе',
   READY: 'Готово',
   DELIVERED: 'Отдано',
@@ -128,7 +129,7 @@ export const orderService = {
 
     const historyEntry = {
       action: 'PRICE_CHANGED',
-      from: orderData.price,
+      from: orderData.price || 0,
       to: newPrice,
       userId: user.uid,
       userName: userData?.name || user.displayName || user.email,
@@ -137,6 +138,27 @@ export const orderService = {
 
     await updateDoc(orderRef, {
       price: newPrice,
+      updatedAt: serverTimestamp(),
+      history: [historyEntry, ...orderData.history],
+    });
+  },
+
+  async updateWorkerPrice(id, newPrice, user, userData) {
+    const orderRef = doc(db, COLLECTION_NAME, id);
+    const orderSnap = await getDoc(orderRef);
+    const orderData = orderSnap.data();
+
+    const historyEntry = {
+      action: 'WORKER_PRICE_CHANGED',
+      from: orderData.workerPrice || 0,
+      to: newPrice,
+      userId: user.uid,
+      userName: userData?.name || user.displayName || user.email,
+      timestamp: new Date(),
+    };
+
+    await updateDoc(orderRef, {
+      workerPrice: newPrice,
       updatedAt: serverTimestamp(),
       history: [historyEntry, ...orderData.history],
     });

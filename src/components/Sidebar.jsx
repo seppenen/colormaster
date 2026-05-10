@@ -10,6 +10,7 @@ import {
   Car,
   Menu,
   X,
+  FileBarChart,
 } from 'lucide-react';
 
 const Sidebar = ({ company, userData, isAdmin, isSidebarOpen, setIsSidebarOpen }) => {
@@ -63,6 +64,16 @@ const Sidebar = ({ company, userData, isAdmin, isSidebarOpen, setIsSidebarOpen }
           >
             <UsersIcon className="w-5 h-5 mr-3" />
             Пользователи
+          </Link>
+        )}
+        {isAdmin && (
+          <Link
+            to="/reporting"
+            onClick={() => setIsSidebarOpen(false)}
+            className={navLinkClasses('/reporting')}
+          >
+            <FileBarChart className="w-5 h-5 mr-3" />
+            Отчеты
           </Link>
         )}
       </nav>
