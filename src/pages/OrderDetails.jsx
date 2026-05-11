@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { getStatusBadge } from '../utils/orderUtils.jsx';
+import { getStatusBadge, getUpdateIndicator } from '../utils/orderUtils.jsx';
 
 const OrderDetails = ({ user, userData }) => {
   const { id } = useParams();
@@ -239,6 +239,7 @@ const OrderDetails = ({ user, userData }) => {
           </div>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-3">
+          {getUpdateIndicator(order)}
           {!isEditingDetails && (
             <button
               onClick={handleEditDetails}

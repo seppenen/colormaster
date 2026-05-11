@@ -13,7 +13,7 @@ const Users = ({ userData }) => {
     email: '',
     password: '',
     role: USER_ROLES.EMPLOYEE,
-  });
+  })
 
   useEffect(() => {
     const fetchUsers = async () => {

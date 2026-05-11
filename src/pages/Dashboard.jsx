@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { orderService, ORDER_STATUS } from '../services/orderService';
 import { userService, USER_ROLES } from '../services/userService';
-import { Car, Clock, Search, Eye, AlertTriangle } from 'lucide-react';
+import { Car, Clock, Search, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { getStatusBadge, checkDelay } from '../utils/orderUtils.jsx';
+import { getStatusBadge, checkDelay, getUpdateIndicator } from '../utils/orderUtils.jsx';
 
 const Dashboard = ({ user, userData, company }) => {
   const isAdmin = userData?.role === USER_ROLES.ADMIN;
@@ -116,6 +116,9 @@ const Dashboard = ({ user, userData, company }) => {
                       </div>
                     </div>
                   </div>
+                  <div className="flex flex-col items-end">
+                    {getUpdateIndicator(order)}
+                  </div>
                 </div>
 
                 <div className="flex justify-between items-end mt-4">
@@ -158,9 +161,7 @@ const Dashboard = ({ user, userData, company }) => {
                 <th className="px-6 py-4 text-left text-xs font-bold text-stripe-slate uppercase tracking-widest">
                   Время
                 </th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-stripe-slate uppercase tracking-widest">
-                  Действие
-                </th>
+
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
@@ -217,9 +218,9 @@ const Dashboard = ({ user, userData, company }) => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <button className="text-stripe-slate hover:text-stripe-blue p-2 hover:bg-white rounded-md transition-all">
-                        <Eye className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center justify-end space-x-3">
+                        {getUpdateIndicator(order)}
+                      </div>
                     </td>
                   </tr>
                 ))

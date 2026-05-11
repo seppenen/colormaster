@@ -1,6 +1,6 @@
 import React from 'react';
 import { ORDER_STATUS } from '../services/orderService';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Info } from 'lucide-react';
 
 export const getStatusBadge = (order, isAdmin = false) => {
   const status = typeof order === 'string' ? order : order.status;
@@ -87,5 +87,24 @@ export const checkDelay = (order) => {
       </div>
     );
   }
+  return null;
+};
+
+export const getUpdateIndicator = (order) => {
+  if (!order.history || order.history.length === 0) return null;
+
+  const hasUpdates = order.history.some(entry => 
+    ['DETAILS_CHANGED', 'PRICE_CHANGED', 'WORKER_PRICE_CHANGED', 'DESCRIPTION_CHANGED'].includes(entry.action)
+  );
+
+  if (hasUpdates) {
+    return (
+      <div className="flex items-center text-stripe-blue bg-stripe-blue/10 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider" title="Данные были обновлены">
+        <Info className="w-3 h-3 mr-1" />
+        Обновлено
+      </div>
+    );
+  }
+
   return null;
 };
