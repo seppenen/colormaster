@@ -90,6 +90,15 @@ export const checkDelay = (order) => {
   return null;
 };
 
+export const formatDuration = (ms) => {
+  if (!ms || ms < 0) return '0ч';
+  const totalMinutes = Math.floor(ms / (1000 * 60));
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  
+  return `${hours}:${minutes.toString().padStart(2, '0')}ч`;
+};
+
 export const getUpdateIndicator = (order) => {
   if (!order.history || order.history.length === 0) return null;
 

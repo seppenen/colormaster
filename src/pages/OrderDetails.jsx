@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { getStatusBadge, getUpdateIndicator } from '../utils/orderUtils.jsx';
+import { getStatusBadge, getUpdateIndicator, formatDuration } from '../utils/orderUtils.jsx';
 
 const OrderDetails = ({ user, userData }) => {
   const { id } = useParams();
@@ -37,7 +37,27 @@ const OrderDetails = ({ user, userData }) => {
     description: '',
   });
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
+  const [currentTimeInWork, setCurrentTimeInWork] = useState(0);
   const isAdmin = userData?.role === USER_ROLES.ADMIN;
+
+  useEffect(() => {
+    let interval;
+    if (order?.status === ORDER_STATUS.IN_PROGRESS && order?.workStartedAt) {
+      const startTime = order.workStartedAt.toDate ? order.workStartedAt.toDate() : new Date(order.workStartedAt);
+      
+      const updateTimer = () => {
+        const now = new Date();
+        const diff = now.getTime() - startTime.getTime();
+        setCurrentTimeInWork(diff);
+      };
+      
+      updateTimer();
+      interval = setInterval(updateTimer, 60000); // Update every minute
+    } else {
+      setCurrentTimeInWork(0);
+    }
+    return () => clearInterval(interval);
+  }, [order?.status, order?.workStartedAt]);
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -574,6 +594,46 @@ const OrderDetails = ({ user, userData }) => {
                 </button>
               )}
             </div>
+
+            <div className="stripe-card p-8 bg-white overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-4">
+                <div className="bg-orange-50 p-2 rounded-lg">
+                  <Clock className="w-5 h-5 text-orange-500" />
+                </div>
+              </div>
+              <h2 className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest mb-1">
+                Время в работе
+              </h2>
+              <div className="flex items-baseline group-hover:scale-[1.02] transition-transform origin-left">
+                <span className="text-4xl font-black text-stripe-dark">
+                  {formatDuration((order.workDuration || 0) + currentTimeInWork)}
+                </span>
+              </div>
+              {order.status === ORDER_STATUS.IN_PROGRESS && (
+                <p className="mt-6 text-emerald-600 text-xs font-bold flex items-center animate-pulse">
+                  <span className="w-2 h-2 bg-emerald-500 rounded-full mr-2"></span>
+                  Сейчас в работе: {order.history?.find(h => h.to === ORDER_STATUS.IN_PROGRESS)?.userName || ''}
+                </p>
+              )}
+            </div>
+            
+            {/* Show worker breakdown if multiple workers */}
+            {order.workerTimes && Object.keys(order.workerTimes).length > 0 && (
+              <div className="stripe-card p-6 bg-gray-50/30 border-dashed">
+                <h3 className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest mb-3">Распределение времени</h3>
+                <div className="space-y-2">
+                  {Object.entries(order.workerTimes).map(([workerId, duration]) => {
+                    const workerHistory = order.history?.find(h => h.userId === workerId);
+                    return (
+                      <div key={workerId} className="flex justify-between items-center">
+                        <span className="text-xs text-stripe-slate">{workerHistory?.userName || 'Сотрудник'}</span>
+                        <span className="text-xs font-bold text-stripe-dark">{formatDuration(duration)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="stripe-card p-6 bg-gray-50/50 border-dashed">

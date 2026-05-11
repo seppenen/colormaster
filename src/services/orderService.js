@@ -114,12 +114,46 @@ export const orderService = {
       timestamp: new Date(),
     };
 
-    await updateDoc(orderRef, {
+    const updates = {
       status: newStatus,
       statusChangedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       history: [historyEntry, ...orderData.history],
-    });
+    };
+
+    // Time tracking logic
+    const now = new Date();
+    
+    // If moving TO "In Progress", record start time and WHO started it
+    if (newStatus === ORDER_STATUS.IN_PROGRESS) {
+      updates.workStartedAt = serverTimestamp();
+      updates.workStartedBy = user.uid;
+    }
+
+    // If moving FROM "In Progress", calculate duration
+    if (orderData.status === ORDER_STATUS.IN_PROGRESS && orderData.workStartedAt) {
+      const startTime = orderData.workStartedAt.toDate ? orderData.workStartedAt.toDate() : new Date(orderData.workStartedAt);
+      const durationMs = now.getTime() - startTime.getTime();
+      
+      // Update total duration
+      const currentTotalDuration = orderData.workDuration || 0;
+      updates.workDuration = currentTotalDuration + durationMs;
+      
+      // Update duration for the specific worker who was working
+      const workerId = orderData.workStartedBy || user.uid;
+      const workerTimes = orderData.workerTimes || {};
+      const currentWorkerDuration = workerTimes[workerId] || 0;
+      
+      updates.workerTimes = {
+        ...workerTimes,
+        [workerId]: currentWorkerDuration + durationMs
+      };
+
+      updates.workStartedAt = null;
+      updates.workStartedBy = null;
+    }
+
+    await updateDoc(orderRef, updates);
   },
 
   async updateOrderPrice(id, newPrice, user, userData) {

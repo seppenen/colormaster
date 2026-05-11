@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { userService, USER_ROLES } from '../services/userService';
 import { orderService, ORDER_STATUS } from '../services/orderService';
-import { Users, FileText, ChevronLeft, ChevronRight, Euro, Calendar, ExternalLink } from 'lucide-react';
+import { Users, FileText, ChevronLeft, ChevronRight, Euro, Calendar, ExternalLink, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, eachMonthOfInterval, subMonths, isSameMonth } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { formatDuration } from '../utils/orderUtils';
 
 const Reporting = ({ userData }) => {
   const [users, setUsers] = useState([]);
@@ -70,6 +71,18 @@ const Reporting = ({ userData }) => {
     return filteredOrders.reduce((sum, order) => sum + (Number(order.workerPrice) || 0), 0);
   };
 
+  const calculateTotalDuration = (userId, filteredOrders) => {
+    return filteredOrders.reduce((sum, order) => {
+      // Use the specific time recorded for this worker if available
+      if (order.workerTimes && order.workerTimes[userId]) {
+        return sum + order.workerTimes[userId];
+      }
+      // Fallback for orders before workerTimes was implemented
+      // or if workerTimes doesn't have this user (shouldn't happen with filtered orders)
+      return sum + (Number(order.workDuration) || 0);
+    }, 0);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-24">
@@ -81,6 +94,7 @@ const Reporting = ({ userData }) => {
   const selectedUser = users.find(u => u.uid === selectedUserId);
   const filteredOrders = selectedUserId ? getFilteredOrders(selectedUserId) : [];
   const totalEarnings = calculateTotalEarnings(filteredOrders);
+  const totalDuration = selectedUserId ? calculateTotalDuration(selectedUserId, filteredOrders) : 0;
 
   return (
     <div className="space-y-8">
@@ -118,46 +132,51 @@ const Reporting = ({ userData }) => {
         <div className="lg:col-span-1 space-y-4">
           <h2 className="text-xs font-bold text-stripe-slate uppercase tracking-widest px-1">Сотрудники</h2>
           <div className="space-y-2">
-            {users.map((user) => {
-              const userOrders = getFilteredOrders(user.uid);
-              const userEarnings = calculateTotalEarnings(userOrders);
-              
-              return (
-                <button
-                  key={user.uid}
-                  onClick={() => setSelectedUserId(user.uid)}
-                  className={`w-full text-left p-4 rounded-xl transition-all border ${
-                    selectedUserId === user.uid
-                      ? 'bg-white border-stripe-blue shadow-stripe-sm ring-1 ring-stripe-blue/10'
-                      : 'bg-[#f6f9fc] border-transparent hover:bg-white hover:border-gray-200'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border ${
-                        selectedUserId === user.uid ? 'bg-stripe-blue text-white border-stripe-blue' : 'bg-white text-stripe-blue border-gray-100'
-                      }`}>
-                        {user.name?.charAt(0) || 'U'}
+              {users.map((user) => {
+                const userOrders = getFilteredOrders(user.uid);
+                const userEarnings = calculateTotalEarnings(userOrders);
+                const userDuration = calculateTotalDuration(user.uid, userOrders);
+                
+                return (
+                  <button
+                    key={user.uid}
+                    onClick={() => setSelectedUserId(user.uid)}
+                    className={`w-full text-left p-4 rounded-xl transition-all border ${
+                      selectedUserId === user.uid
+                        ? 'bg-white border-stripe-blue shadow-stripe-sm ring-1 ring-stripe-blue/10'
+                        : 'bg-[#f6f9fc] border-transparent hover:bg-white hover:border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border ${
+                          selectedUserId === user.uid ? 'bg-stripe-blue text-white border-stripe-blue' : 'bg-white text-stripe-blue border-gray-100'
+                        }`}>
+                          {user.name?.charAt(0) || 'U'}
+                        </div>
+                        <div>
+                          <p className={`font-bold text-sm ${selectedUserId === user.uid ? 'text-stripe-dark' : 'text-stripe-slate'}`}>
+                            {user.name}
+                          </p>
+                          <p className="text-[10px] text-stripe-slate uppercase tracking-wider font-bold">
+                            {user.role === USER_ROLES.ADMIN ? 'Админ' : 'Сотрудник'}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className={`font-bold text-sm ${selectedUserId === user.uid ? 'text-stripe-dark' : 'text-stripe-slate'}`}>
-                          {user.name}
-                        </p>
-                        <p className="text-[10px] text-stripe-slate uppercase tracking-wider font-bold">
-                          {user.role === USER_ROLES.ADMIN ? 'Админ' : 'Сотрудник'}
-                        </p>
+                      <div className="text-right">
+                        {userEarnings > 0 && <p className="text-sm font-black text-stripe-dark">€{userEarnings}</p>}
+                        {userDuration > 0 && (
+                          <p className="text-[10px] text-stripe-slate font-bold flex items-center justify-end">
+                            <Clock className="w-2.5 h-2.5 mr-1" />
+                            {formatDuration(userDuration)}
+                          </p>
+                        )}
+                        {userOrders.length > 0 && <p className="text-[10px] text-emerald-600 font-bold">{userOrders.length} зак.</p>}
                       </div>
                     </div>
-                    {userEarnings > 0 && (
-                      <div className="text-right">
-                        <p className="text-sm font-black text-stripe-dark">€{userEarnings}</p>
-                        <p className="text-[10px] text-emerald-600 font-bold">{userOrders.length} зак.</p>
-                      </div>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
+                  </button>
+                );
+              })}
           </div>
         </div>
 
@@ -174,7 +193,7 @@ const Reporting = ({ userData }) => {
           ) : (
             <>
               {/* Summary Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="stripe-card p-6 bg-stripe-blue">
                   <p className="text-[10px] text-blue-100 uppercase font-bold tracking-widest mb-1">Заработок за месяц</p>
                   <div className="flex items-baseline text-white">
@@ -189,6 +208,12 @@ const Reporting = ({ userData }) => {
                     <span className="ml-2 text-xs font-bold text-stripe-slate uppercase tracking-wider">Заказов</span>
                   </div>
                 </div>
+                <div className="stripe-card p-6 bg-white border border-gray-100 shadow-stripe-sm">
+                  <p className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest mb-1">Всего в работе</p>
+                  <div className="flex items-baseline text-stripe-dark">
+                    <span className="text-3xl font-black">{formatDuration(totalDuration)}</span>
+                  </div>
+                </div>
               </div>
 
               {/* Orders Table */}
@@ -196,7 +221,7 @@ const Reporting = ({ userData }) => {
                 <div className="p-6 border-b border-gray-50">
                   <h3 className="text-lg font-bold text-stripe-dark flex items-center">
                     <FileText className="w-5 h-5 mr-2 text-stripe-blue" />
-                    Список заказов
+                    Список работ
                   </h3>
                 </div>
                 <div className="overflow-x-auto">
@@ -210,6 +235,7 @@ const Reporting = ({ userData }) => {
                         <tr>
                           <th className="px-6 py-4 text-left text-[10px] font-bold text-stripe-slate uppercase tracking-widest">Заказ</th>
                           <th className="px-6 py-4 text-left text-[10px] font-bold text-stripe-slate uppercase tracking-widest">Дата</th>
+                          <th className="px-6 py-4 text-left text-[10px] font-bold text-stripe-slate uppercase tracking-widest">Время</th>
                           <th className="px-6 py-4 text-left text-[10px] font-bold text-stripe-slate uppercase tracking-widest">Статус</th>
                           <th className="px-6 py-4 text-right text-[10px] font-bold text-stripe-slate uppercase tracking-widest">Заработок</th>
                         </tr>
@@ -229,6 +255,11 @@ const Reporting = ({ userData }) => {
                             <td className="px-6 py-4">
                               <span className="text-xs text-stripe-slate">
                                 {order.createdAt?.toDate ? format(order.createdAt.toDate(), 'dd.MM.yyyy') : '—'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className="text-xs text-stripe-slate font-bold">
+                                {formatDuration(order.workerTimes?.[selectedUserId] || order.workDuration)}
                               </span>
                             </td>
                             <td className="px-6 py-4">
