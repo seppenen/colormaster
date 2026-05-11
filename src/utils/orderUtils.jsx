@@ -96,7 +96,7 @@ export const formatDuration = (ms) => {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   
-  return `${hours}:${minutes.toString().padStart(2, '0')}ч`;
+  return `${hours}:${minutes.toString().padStart(2, '0')}`;
 };
 
 export const getUpdateIndicator = (order) => {
@@ -108,7 +108,7 @@ export const getUpdateIndicator = (order) => {
 
   if (hasUpdates) {
     return (
-      <div className="flex items-center text-stripe-blue bg-stripe-blue/10 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider" title="Данные были обновлены">
+      <div className="flex items-center text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-yellow-200" title="Данные были обновлены">
         <Info className="w-3 h-3 mr-1" />
         Обновлено
       </div>
