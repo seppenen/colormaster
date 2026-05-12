@@ -99,21 +99,3 @@ export const formatDuration = (ms) => {
   return `${hours}:${minutes.toString().padStart(2, '0')}`;
 };
 
-export const getUpdateIndicator = (order) => {
-  if (!order.history || order.history.length === 0) return null;
-
-  const hasUpdates = order.history.some(entry => 
-    ['DETAILS_CHANGED', 'PRICE_CHANGED', 'WORKER_PRICE_CHANGED', 'DESCRIPTION_CHANGED'].includes(entry.action)
-  );
-
-  if (hasUpdates) {
-    return (
-      <div className="flex items-center text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-yellow-200" title="Данные были обновлены">
-        <Info className="w-3 h-3 mr-1" />
-        Обновлено
-      </div>
-    );
-  }
-
-  return null;
-};

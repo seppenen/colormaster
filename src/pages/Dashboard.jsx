@@ -5,7 +5,7 @@ import { userService, USER_ROLES } from '../services/userService';
 import { Car, Clock, Search, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { getStatusBadge, checkDelay, getUpdateIndicator } from '../utils/orderUtils.jsx';
+import { getStatusBadge, checkDelay } from '../utils/orderUtils.jsx';
 
 const Dashboard = ({ user, userData, company }) => {
   const isAdmin = userData?.role === USER_ROLES.ADMIN;
@@ -116,9 +116,6 @@ const Dashboard = ({ user, userData, company }) => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end">
-                    {getUpdateIndicator(order)}
-                  </div>
                 </div>
 
                 <div className="flex justify-between items-end mt-4">
@@ -215,11 +212,6 @@ const Dashboard = ({ user, userData, company }) => {
                               locale: ru,
                             })
                           : ''}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <div className="flex items-center justify-end space-x-3">
-                        {getUpdateIndicator(order)}
                       </div>
                     </td>
                   </tr>
