@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate } from 'react-router-dom';
 import { orderService, ORDER_STATUS } from '../services/orderService';
-import { USER_ROLES } from '../services/userService';
+import { userService, USER_ROLES } from '../services/userService';
 import {
   ClipboardList,
   Edit2,
@@ -37,7 +37,17 @@ const OrderDetails = ({ user, userData }) => {
     description: '',
   });
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
+  const [isAddingComment, setIsAddingComment] = useState(false);
+  const [newCommentText, setNewCommentText] = useState('');
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingCommentText, setEditingCommentText] = useState('');
   const [currentTimeInWork, setCurrentTimeInWork] = useState(0);
+  const [users, setUsers] = useState([]);
+  const [isEditingWorkerPrice, setIsEditingWorkerPrice] = useState(false);
+  const [workerPriceData, setWorkerPriceData] = useState({
+    price: '',
+    workerId: ''
+  });
   const isAdmin = userData?.role === USER_ROLES.ADMIN;
 
   useEffect(() => {
@@ -64,6 +74,12 @@ const OrderDetails = ({ user, userData }) => {
       try {
         const data = await orderService.getOrder(id);
         setOrder(data);
+        if (data) {
+          setWorkerPriceData({
+            price: data.workerPrice || '',
+            workerId: data.workerId || ''
+          });
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -71,7 +87,23 @@ const OrderDetails = ({ user, userData }) => {
       }
     };
     fetchOrder();
-  }, [id]);
+
+    if (isAdmin) {
+      const fetchUsers = async () => {
+        try {
+          const allUsers = await userService.getAllUsers(userData.companyId);
+          setUsers(allUsers);
+        } catch (err) {
+          console.error('Error fetching users:', err);
+        }
+      };
+      fetchUsers();
+    }
+  }, [id, isAdmin, userData?.companyId]);
+
+  useEffect(() => {
+    // Initial fetch for comments is handled by the order fetch
+  }, [order]);
 
   const handleStatusChange = async (newStatus) => {
     if (newStatus === order.status) return;
@@ -98,15 +130,25 @@ const OrderDetails = ({ user, userData }) => {
   };
 
   const handleWorkerPriceChange = async () => {
-    const newPrice = prompt('Введите зарплату работника:', order.workerPrice || '0');
-    if (newPrice !== null && !isNaN(newPrice)) {
-      try {
-        await orderService.updateWorkerPrice(id, Number(newPrice), user, userData);
-        const updatedOrder = await orderService.getOrder(id);
-        setOrder(updatedOrder);
-      } catch (err) {
-        console.error(err);
-      }
+    const { price, workerId } = workerPriceData;
+    const selectedWorker = users.find(u => u.uid === workerId);
+    const workerName = selectedWorker ? selectedWorker.name : '';
+
+    try {
+      await orderService.updateWorkerPrice(
+        id, 
+        Number(price), 
+        workerId, 
+        workerName, 
+        user, 
+        userData
+      );
+      const updatedOrder = await orderService.getOrder(id);
+      setOrder(updatedOrder);
+      setIsEditingWorkerPrice(false);
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка при сохранении зарплаты');
     }
   };
 
@@ -172,7 +214,7 @@ const OrderDetails = ({ user, userData }) => {
       case 'PRICE_CHANGED':
         return `Цена изменена: €${item.from || 0} → €${item.to}`;
       case 'WORKER_PRICE_CHANGED':
-        return `Зарплата работника изменена: €${item.from || 0} → €${item.to}`;
+        return `Зарплата ${item.workerName ? '(' + item.workerName + ') ' : ''}изменена: €${item.from || 0} → €${item.to}`;
       case 'DETAILS_CHANGED':
         return 'Детали заказа обновлены';
       case 'DESCRIPTION_CHANGED':
@@ -226,6 +268,47 @@ const OrderDetails = ({ user, userData }) => {
       } catch (err) {
         console.error(err);
         alert('Ошибка при удалении фотографии');
+      }
+    }
+  };
+
+  const handleAddComment = async () => {
+    if (!newCommentText.trim()) return;
+    try {
+      await orderService.addOrderComment(id, newCommentText, user, userData);
+      const updatedOrder = await orderService.getOrder(id);
+      setOrder(updatedOrder);
+      setNewCommentText('');
+      setIsAddingComment(false);
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка при сохранении комментария');
+    }
+  };
+
+  const handleUpdateComment = async (commentId) => {
+    if (!editingCommentText.trim()) return;
+    try {
+      await orderService.updateOrderComment(id, commentId, editingCommentText, user, userData);
+      const updatedOrder = await orderService.getOrder(id);
+      setOrder(updatedOrder);
+      setEditingCommentId(null);
+      setEditingCommentText('');
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка при обновлении комментария');
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (window.confirm('Удалить этот комментарий?')) {
+      try {
+        await orderService.deleteOrderComment(id, commentId, user, userData);
+        const updatedOrder = await orderService.getOrder(id);
+        setOrder(updatedOrder);
+      } catch (err) {
+        console.error(err);
+        alert('Ошибка при удалении комментария');
       }
     }
   };
@@ -434,17 +517,143 @@ const OrderDetails = ({ user, userData }) => {
               </>
             )}
 
-            {order.comment && (
-              <div className="mt-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100 flex items-start">
-                <AlertTriangle className="w-5 h-5 text-indigo-500 mr-3 mt-0.5" />
-                <div>
+            <div className="mt-6 p-6 bg-indigo-50 rounded-xl border border-indigo-100">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center">
+                  <AlertTriangle className="w-5 h-5 text-indigo-500 mr-3" />
                   <p className="text-[10px] text-indigo-600 uppercase font-bold tracking-widest">
-                    Комментарий сотрудника
+                    Комментарии
                   </p>
-                  <p className="mt-1 text-indigo-900 text-sm font-medium">{order.comment}</p>
                 </div>
+                {!isAddingComment && (
+                  <button
+                    onClick={() => setIsAddingComment(true)}
+                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition-colors flex items-center"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5 mr-1" />
+                    Добавить
+                  </button>
+                )}
               </div>
-            )}
+
+              <div className="space-y-4">
+                {/* Legacy single comment support */}
+                {order.comment && (!order.comments || order.comments.length === 0) && (
+                  <div className="bg-white p-4 rounded-lg border border-indigo-100 shadow-sm">
+                    <p className="text-indigo-900 text-sm font-medium leading-relaxed">
+                      {order.comment}
+                    </p>
+                    <p className="mt-2 text-[10px] text-indigo-400 italic">
+                      Старый формат комментария
+                    </p>
+                  </div>
+                )}
+
+                {/* List of comments */}
+                {order.comments && order.comments.length > 0 ? (
+                  order.comments.map((comment) => (
+                    <div key={comment.id} className="bg-white p-4 rounded-lg border border-indigo-100 shadow-sm group">
+                      {editingCommentId === comment.id ? (
+                        <div className="space-y-3">
+                          <textarea
+                            className="w-full bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-sm text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[80px]"
+                            value={editingCommentText}
+                            onChange={(e) => setEditingCommentText(e.target.value)}
+                          />
+                          <div className="flex justify-end space-x-2">
+                            <button
+                              onClick={() => setEditingCommentId(null)}
+                              className="px-3 py-1.5 text-xs font-bold text-indigo-600 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
+                            >
+                              Отмена
+                            </button>
+                            <button
+                              onClick={() => handleUpdateComment(comment.id)}
+                              className="px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+                            >
+                              Обновить
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-start mb-1">
+                            <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-tight">
+                              {comment.userName}
+                            </span>
+                            <span className="text-[10px] text-indigo-400">
+                              {comment.timestamp?.toDate
+                                ? format(comment.timestamp.toDate(), 'dd.MM.yy HH:mm', { locale: ru })
+                                : format(new Date(comment.timestamp), 'dd.MM.yy HH:mm', { locale: ru })}
+                            </span>
+                          </div>
+                          <p className="text-indigo-900 text-sm font-medium leading-relaxed whitespace-pre-wrap">
+                            {comment.text}
+                          </p>
+                          {(isAdmin || user.uid === comment.userId) && (
+                            <div className="flex space-x-3 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => {
+                                  setEditingCommentId(comment.id);
+                                  setEditingCommentText(comment.text);
+                                }}
+                                className="text-[10px] font-bold text-indigo-400 hover:text-indigo-600 flex items-center"
+                              >
+                                <Edit2 className="w-3 h-3 mr-1" />
+                                Изменить
+                              </button>
+                              <button
+                                onClick={() => handleDeleteComment(comment.id)}
+                                className="text-[10px] font-bold text-red-300 hover:text-red-500 flex items-center"
+                              >
+                                <Trash2 className="w-3 h-3 mr-1" />
+                                Удалить
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  !order.comment && (
+                    <p className="text-indigo-400 text-sm italic text-center py-2">
+                      Комментариев пока нет
+                    </p>
+                  )
+                )}
+
+                {/* New comment form */}
+                {isAddingComment && (
+                  <div className="mt-4 bg-white p-4 rounded-lg border-2 border-indigo-200 shadow-md animate-in slide-in-from-top-2 duration-200">
+                    <textarea
+                      className="w-full bg-indigo-50 border border-indigo-100 rounded-lg p-3 text-sm text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[100px] resize-none"
+                      placeholder="Напишите комментарий..."
+                      autoFocus
+                      value={newCommentText}
+                      onChange={(e) => setNewCommentText(e.target.value)}
+                    />
+                    <div className="flex justify-end space-x-2 mt-3">
+                      <button
+                        onClick={() => {
+                          setIsAddingComment(false);
+                          setNewCommentText('');
+                        }}
+                        className="px-4 py-2 text-xs font-bold text-indigo-600 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
+                      >
+                        Отмена
+                      </button>
+                      <button
+                        onClick={handleAddComment}
+                        className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                      >
+                        Отправить
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
           <div className="stripe-card p-8 print:hidden">
@@ -577,20 +786,68 @@ const OrderDetails = ({ user, userData }) => {
               <h2 className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest mb-1">
                 Зарплата работника
               </h2>
-              <div className="flex items-baseline group-hover:scale-[1.02] transition-transform origin-left">
-                <span className="text-4xl font-black text-stripe-dark">€{order.workerPrice || '0'}</span>
-                <span className="ml-2 text-xs font-bold text-stripe-slate uppercase tracking-wider">
-                  EUR
-                </span>
-              </div>
-              {isAdmin && (
-                <button
-                  onClick={handleWorkerPriceChange}
-                  className="mt-6 text-stripe-blue text-xs font-bold hover:underline flex items-center"
-                >
-                  <Edit2 className="w-3 h-3 mr-1" />
-                  Изменить зарплату
-                </button>
+              {isEditingWorkerPrice ? (
+                <div className="space-y-4 animate-in fade-in duration-200">
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-stripe-slate uppercase font-bold">Сумма (€)</label>
+                    <input
+                      type="number"
+                      className="stripe-input text-lg font-bold"
+                      value={workerPriceData.price}
+                      onChange={(e) => setWorkerPriceData(prev => ({ ...prev, price: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] text-stripe-slate uppercase font-bold">Сотрудник</label>
+                    <select
+                      className="stripe-input text-sm"
+                      value={workerPriceData.workerId}
+                      onChange={(e) => setWorkerPriceData(prev => ({ ...prev, workerId: e.target.value }))}
+                    >
+                      <option value="">Выберите сотрудника</option>
+                      {users.map(u => (
+                        <option key={u.uid} value={u.uid}>{u.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex space-x-2 pt-2">
+                    <button
+                      onClick={handleWorkerPriceChange}
+                      className="flex-1 bg-stripe-blue text-white py-2 rounded-lg text-xs font-bold hover:bg-blue-600 transition-colors"
+                    >
+                      Сохранить
+                    </button>
+                    <button
+                      onClick={() => setIsEditingWorkerPrice(false)}
+                      className="flex-1 bg-gray-100 text-stripe-slate py-2 rounded-lg text-xs font-bold hover:bg-gray-200 transition-colors"
+                    >
+                      Отмена
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-baseline group-hover:scale-[1.02] transition-transform origin-left">
+                    <span className="text-4xl font-black text-stripe-dark">€{order.workerPrice || '0'}</span>
+                    <span className="ml-2 text-xs font-bold text-stripe-slate uppercase tracking-wider">
+                      EUR
+                    </span>
+                  </div>
+                  {order.workerName && (
+                    <p className="mt-2 text-xs font-bold text-stripe-blue bg-blue-50 px-2 py-1 rounded-md inline-block">
+                      {order.workerName}
+                    </p>
+                  )}
+                  {isAdmin && (
+                    <button
+                      onClick={() => setIsEditingWorkerPrice(true)}
+                      className="mt-6 text-stripe-blue text-xs font-bold hover:underline flex items-center"
+                    >
+                      <Edit2 className="w-3 h-3 mr-1" />
+                      Изменить зарплату
+                    </button>
+                  )}
+                </>
               )}
             </div>
 

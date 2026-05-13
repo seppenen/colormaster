@@ -17,7 +17,6 @@ const CreateOrder = ({ user, userData }) => {
     viitenumero: '',
     description: '',
     price: '',
-    comment: '',
   });
 
   const handleInputChange = (e) => {
@@ -168,17 +167,6 @@ const CreateOrder = ({ user, userData }) => {
           </div>
         )}
 
-        <div className="space-y-1">
-          <label className="block text-sm font-bold text-stripe-dark">Комментарий сотрудника</label>
-          <textarea
-            name="comment"
-            rows="2"
-            className="stripe-input resize-none"
-            placeholder="Дополнительная информация для внутреннего пользования..."
-            value={formData.comment}
-            onChange={handleInputChange}
-          ></textarea>
-        </div>
 
         <div className="space-y-4 pt-4 border-t border-gray-100">
           <label className="block text-sm font-bold text-stripe-dark">Фотографии автомобиля</label>

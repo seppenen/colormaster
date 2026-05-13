@@ -177,7 +177,7 @@ export const orderService = {
     });
   },
 
-  async updateWorkerPrice(id, newPrice, user, userData) {
+  async updateWorkerPrice(id, newPrice, workerId, workerName, user, userData) {
     const orderRef = doc(db, COLLECTION_NAME, id);
     const orderSnap = await getDoc(orderRef);
     const orderData = orderSnap.data();
@@ -186,6 +186,7 @@ export const orderService = {
       action: 'WORKER_PRICE_CHANGED',
       from: orderData.workerPrice || 0,
       to: newPrice,
+      workerName: workerName,
       userId: user.uid,
       userName: userData?.name || user.displayName || user.email,
       timestamp: new Date(),
@@ -193,6 +194,89 @@ export const orderService = {
 
     await updateDoc(orderRef, {
       workerPrice: newPrice,
+      workerId: workerId || null,
+      workerName: workerName || null,
+      updatedAt: serverTimestamp(),
+      history: [historyEntry, ...orderData.history],
+    });
+  },
+
+  async addOrderComment(id, commentText, user, userData) {
+    const orderRef = doc(db, COLLECTION_NAME, id);
+    const orderSnap = await getDoc(orderRef);
+    const orderData = orderSnap.data();
+
+    const newComment = {
+      id: Date.now().toString(),
+      text: commentText,
+      userId: user.uid,
+      userName: userData?.name || user.displayName || user.email,
+      timestamp: new Date(),
+    };
+
+    const historyEntry = {
+      action: 'COMMENT_ADDED',
+      userId: user.uid,
+      userName: userData?.name || user.displayName || user.email,
+      timestamp: new Date(),
+    };
+
+    const comments = orderData.comments || [];
+    
+    // Support legacy single comment if it exists
+    if (orderData.comment && !orderData.comments) {
+      // One-time migration of the old comment to the new array format could be done here, 
+      // but let's keep it simple and just append to the new list.
+    }
+
+    await updateDoc(orderRef, {
+      comments: [...comments, newComment],
+      updatedAt: serverTimestamp(),
+      history: [historyEntry, ...orderData.history],
+    });
+
+    return newComment;
+  },
+
+  async updateOrderComment(id, commentId, newText, user, userData) {
+    const orderRef = doc(db, COLLECTION_NAME, id);
+    const orderSnap = await getDoc(orderRef);
+    const orderData = orderSnap.data();
+
+    const comments = (orderData.comments || []).map(c => 
+      c.id === commentId ? { ...c, text: newText, updatedAt: new Date() } : c
+    );
+
+    const historyEntry = {
+      action: 'COMMENT_UPDATED',
+      userId: user.uid,
+      userName: userData?.name || user.displayName || user.email,
+      timestamp: new Date(),
+    };
+
+    await updateDoc(orderRef, {
+      comments,
+      updatedAt: serverTimestamp(),
+      history: [historyEntry, ...orderData.history],
+    });
+  },
+
+  async deleteOrderComment(id, commentId, user, userData) {
+    const orderRef = doc(db, COLLECTION_NAME, id);
+    const orderSnap = await getDoc(orderRef);
+    const orderData = orderSnap.data();
+
+    const comments = (orderData.comments || []).filter(c => c.id !== commentId);
+
+    const historyEntry = {
+      action: 'COMMENT_DELETED',
+      userId: user.uid,
+      userName: userData?.name || user.displayName || user.email,
+      timestamp: new Date(),
+    };
+
+    await updateDoc(orderRef, {
+      comments,
       updatedAt: serverTimestamp(),
       history: [historyEntry, ...orderData.history],
     });
