@@ -22,6 +22,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [company, setCompany] = useState(null);
+  const [activeBranchId, setActiveBranchId] = useState(localStorage.getItem('activeBranchId') || 'all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,6 +45,9 @@ function App() {
         if (data.companyId) {
           const compData = await companyService.getCompany(data.companyId);
           setCompany(compData);
+          
+          // If activeBranchId is not set or not in branches, and we have branches, maybe default to first one?
+          // But 'all' is a good default too.
         } else {
           setCompany(null);
         }
@@ -60,6 +64,11 @@ function App() {
   const handleCompanyCreated = (newCompany) => {
     setCompany(newCompany);
     setUserData((prev) => ({ ...prev, companyId: newCompany.id, role: USER_ROLES.ADMIN }));
+  };
+
+  const handleBranchChange = (branchId) => {
+    setActiveBranchId(branchId);
+    localStorage.setItem('activeBranchId', branchId);
   };
 
   if (loading) return <Loading />;
@@ -80,8 +89,15 @@ function App() {
                   company={company}
                   userData={userData}
                   isAdmin={userData?.role === USER_ROLES.ADMIN}
+                  activeBranchId={activeBranchId}
+                  onBranchChange={handleBranchChange}
                 >
-                  <Dashboard user={user} userData={userData} company={company} />
+                  <Dashboard 
+                    user={user} 
+                    userData={userData} 
+                    company={company} 
+                    activeBranchId={activeBranchId === 'all' ? null : activeBranchId}
+                  />
                 </Layout>
               )
             ) : (
@@ -98,8 +114,15 @@ function App() {
                 company={company}
                 userData={userData}
                 isAdmin={userData?.role === USER_ROLES.ADMIN}
+                activeBranchId={activeBranchId}
+                onBranchChange={handleBranchChange}
               >
-                <CreateOrder user={user} userData={userData} />
+                <CreateOrder 
+                  user={user} 
+                  userData={userData} 
+                  company={company}
+                  activeBranchId={activeBranchId === 'all' ? '' : activeBranchId}
+                />
               </Layout>
             ) : (
               <Navigate to="/" />
@@ -115,8 +138,10 @@ function App() {
                 company={company}
                 userData={userData}
                 isAdmin={userData?.role === USER_ROLES.ADMIN}
+                activeBranchId={activeBranchId}
+                onBranchChange={handleBranchChange}
               >
-                <OrderDetails user={user} userData={userData} />
+                <OrderDetails user={user} userData={userData} company={company} />
               </Layout>
             ) : (
               <Navigate to="/" />
@@ -132,8 +157,10 @@ function App() {
                 company={company}
                 userData={userData}
                 isAdmin={userData?.role === USER_ROLES.ADMIN}
+                activeBranchId={activeBranchId}
+                onBranchChange={handleBranchChange}
               >
-                <Users userData={userData} />
+                <Users userData={userData} company={company} />
               </Layout>
             ) : (
               <Navigate to="/" />
@@ -149,6 +176,8 @@ function App() {
                 company={company}
                 userData={userData}
                 isAdmin={userData?.role === USER_ROLES.ADMIN}
+                activeBranchId={activeBranchId}
+                onBranchChange={handleBranchChange}
               >
                 <Reporting userData={userData} />
               </Layout>

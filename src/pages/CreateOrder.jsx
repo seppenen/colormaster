@@ -4,7 +4,7 @@ import { orderService } from '../services/orderService';
 import { userService, USER_ROLES } from '../services/userService';
 import { Camera, X } from 'lucide-react';
 
-const CreateOrder = ({ user, userData }) => {
+const CreateOrder = ({ user, userData, activeBranchId, company }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState([]);
@@ -17,6 +17,7 @@ const CreateOrder = ({ user, userData }) => {
     viitenumero: '',
     description: '',
     price: '',
+    branchId: activeBranchId || '',
   });
 
   const handleInputChange = (e) => {
@@ -51,7 +52,14 @@ const CreateOrder = ({ user, userData }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await orderService.createOrder(formData, photos, user, userData.companyId, userData);
+      await orderService.createOrder(
+        formData,
+        photos,
+        user,
+        userData.companyId,
+        userData,
+        formData.branchId || null
+      );
       navigate('/');
     } catch (err) {
       console.error(err);
@@ -132,6 +140,28 @@ const CreateOrder = ({ user, userData }) => {
               onChange={handleInputChange}
             />
           </div>
+
+          {company?.branches && company.branches.length > 0 && (
+            <div className="space-y-1">
+              <label className="block text-sm font-bold text-stripe-dark">
+                Точка (филиал) *
+              </label>
+              <select
+                name="branchId"
+                required
+                className="stripe-input"
+                value={formData.branchId}
+                onChange={handleInputChange}
+              >
+                <option value="">Выберите точку</option>
+                {company.branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="space-y-1">

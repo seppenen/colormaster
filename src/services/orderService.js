@@ -28,12 +28,13 @@ export const ORDER_STATUS = {
 };
 
 export const orderService = {
-  async createOrder(orderData, photos, user, companyId, userData) {
+  async createOrder(orderData, photos, user, companyId, userData, branchId = null) {
     const photoUrls = [];
 
     const newOrder = {
       ...orderData,
       companyId,
+      branchId,
       status: ORDER_STATUS.PENDING,
       photos: [],
       history: [
@@ -80,13 +81,24 @@ export const orderService = {
     return { id: docRef.id, ...newOrder, photos: photoUrls };
   },
 
-  async getOrders(companyId) {
+  async getOrders(companyId, branchId = null) {
     if (!companyId) return [];
-    const q = query(
-      collection(db, COLLECTION_NAME),
-      where('companyId', '==', companyId),
-      orderBy('createdAt', 'desc')
-    );
+    
+    let q;
+    if (branchId) {
+      q = query(
+        collection(db, COLLECTION_NAME),
+        where('companyId', '==', companyId),
+        where('branchId', '==', branchId),
+        orderBy('createdAt', 'desc')
+      );
+    } else {
+      q = query(
+        collection(db, COLLECTION_NAME),
+        where('companyId', '==', companyId),
+        orderBy('createdAt', 'desc')
+      );
+    }
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   },

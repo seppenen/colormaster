@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { userService, USER_ROLES } from '../services/userService';
+import { companyService } from '../services/companyService';
 import { secondaryAuth } from '../services/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { PlusCircle, Trash2, X } from 'lucide-react';
+import { PlusCircle, Trash2, X, MapPin, Building2, Save } from 'lucide-react';
 
-const Users = ({ userData }) => {
+const Users = ({ userData, company: initialCompany }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [company, setCompany] = useState(initialCompany);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showBranchModal, setShowBranchModal] = useState(false);
+  const [newBranchName, setNewBranchName] = useState('');
+  const [isUpdatingCompany, setIsUpdatingCompany] = useState(false);
   const [newUserData, setNewUserData] = useState({
     name: '',
     email: '',
@@ -79,6 +84,47 @@ const Users = ({ userData }) => {
     }
   };
 
+  const handleAddBranch = async (e) => {
+    e.preventDefault();
+    if (!newBranchName.trim()) return;
+
+    setIsUpdatingCompany(true);
+    try {
+      const branches = company.branches || [];
+      const newBranch = {
+        id: Date.now().toString(),
+        name: newBranchName.trim(),
+        createdAt: new Date(),
+      };
+      const updatedBranches = [...branches, newBranch];
+      await companyService.updateCompany(company.id, { branches: updatedBranches });
+      setCompany({ ...company, branches: updatedBranches });
+      setNewBranchName('');
+      setShowBranchModal(false);
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка при добавлении точки');
+    } finally {
+      setIsUpdatingCompany(false);
+    }
+  };
+
+  const handleDeleteBranch = async (branchId) => {
+    if (!window.confirm('Вы уверены, что хотите удалить эту точку? Заказы этой точки не будут удалены, но не будут отображаться при фильтрации по ней.')) return;
+
+    setIsUpdatingCompany(true);
+    try {
+      const updatedBranches = (company.branches || []).filter(b => b.id !== branchId);
+      await companyService.updateCompany(company.id, { branches: updatedBranches });
+      setCompany({ ...company, branches: updatedBranches });
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка при удалении точки');
+    } finally {
+      setIsUpdatingCompany(false);
+    }
+  };
+
   if (loading)
     return (
       <div className="flex justify-center py-24">
@@ -91,19 +137,28 @@ const Users = ({ userData }) => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-stripe-dark">
-            Управление пользователями
+            Настройки компании
           </h1>
           <p className="text-stripe-slate mt-1 text-sm">
-            Управление доступом сотрудников к системе
+            Управление пользователями и точками (филиалами)
           </p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="stripe-button-primary flex items-center"
-        >
-          <PlusCircle className="w-5 h-5 mr-2" />
-          Добавить сотрудника
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowBranchModal(true)}
+            className="bg-white text-stripe-dark border border-gray-200 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors flex items-center shadow-sm"
+          >
+            <MapPin className="w-4 h-4 mr-2 text-stripe-blue" />
+            Управление точками
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="stripe-button-primary flex items-center shadow-stripe-sm"
+          >
+            <PlusCircle className="w-5 h-5 mr-2" />
+            Добавить сотрудника
+          </button>
+        </div>
       </div>
 
       <div className="stripe-card overflow-hidden">
@@ -179,6 +234,75 @@ const Users = ({ userData }) => {
           </tbody>
         </table>
       </div>
+
+      {showBranchModal && (
+        <div className="fixed inset-0 bg-stripe-dark/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="stripe-card w-full max-w-md p-8 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-stripe-dark tracking-tight flex items-center">
+                <MapPin className="w-5 h-5 mr-2 text-stripe-blue" />
+                Точки компании
+              </h2>
+              <button
+                onClick={() => setShowBranchModal(false)}
+                className="text-stripe-slate hover:text-stripe-dark"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="space-y-4 mb-8">
+              {company.branches && company.branches.length > 0 ? (
+                company.branches.map((branch) => (
+                  <div key={branch.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100 group">
+                    <div className="flex items-center">
+                      <div className="bg-white p-1.5 rounded-md border border-gray-200 mr-3 shadow-sm">
+                        <Building2 className="w-4 h-4 text-stripe-blue" />
+                      </div>
+                      <span className="text-sm font-bold text-stripe-dark">{branch.name}</span>
+                    </div>
+                    <button 
+                      onClick={() => handleDeleteBranch(branch.id)}
+                      className="text-red-400 hover:text-red-600 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-6 text-stripe-slate italic text-sm border-2 border-dashed border-gray-100 rounded-xl">
+                  Точки еще не добавлены
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleAddBranch} className="space-y-4">
+              <div className="space-y-1">
+                <label className="block text-[10px] font-bold text-stripe-slate uppercase tracking-wider px-1">
+                  Добавить новую точку
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    required
+                    className="stripe-input"
+                    placeholder="Название точки (напр. Филиал Север)"
+                    value={newBranchName}
+                    onChange={(e) => setNewBranchName(e.target.value)}
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={isUpdatingCompany}
+                    className="bg-stripe-blue text-white p-2.5 rounded-lg hover:bg-stripe-blue/90 transition-colors disabled:opacity-50 shadow-stripe-sm"
+                  >
+                    <PlusCircle className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {showAddModal && (
         <div className="fixed inset-0 bg-stripe-dark/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">

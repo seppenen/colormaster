@@ -7,7 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { getStatusBadge, checkDelay } from '../utils/orderUtils.jsx';
 
-const Dashboard = ({ user, userData, company }) => {
+const Dashboard = ({ user, userData, company, activeBranchId }) => {
   const isAdmin = userData?.role === USER_ROLES.ADMIN;
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +19,7 @@ const Dashboard = ({ user, userData, company }) => {
     const fetchOrders = async () => {
       if (!userData?.companyId) return;
       try {
-        const data = await orderService.getOrders(userData.companyId);
+        const data = await orderService.getOrders(userData.companyId, activeBranchId);
         setOrders(data);
       } catch (err) {
         console.error(err);
@@ -28,7 +28,7 @@ const Dashboard = ({ user, userData, company }) => {
       }
     };
     fetchOrders();
-  }, [userData?.companyId]);
+  }, [userData?.companyId, activeBranchId]);
 
   const filteredOrders = orders.filter((order) => {
     const searchLower = searchTerm.toLowerCase();

@@ -20,7 +20,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { getStatusBadge, formatDuration } from '../utils/orderUtils.jsx';
 
-const OrderDetails = ({ user, userData }) => {
+const OrderDetails = ({ user, userData, company }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
@@ -160,6 +160,7 @@ const OrderDetails = ({ user, userData }) => {
       clientPhone: order.clientPhone || '',
       viitenumero: order.viitenumero || '',
       description: order.description || '',
+      branchId: order.branchId || '',
     });
     setIsEditingDetails(true);
   };
@@ -338,6 +339,11 @@ const OrderDetails = ({ user, userData }) => {
               {order.createdAt
                 ? format(order.createdAt.toDate(), 'dd MMMM yyyy HH:mm', { locale: ru })
                 : ''}
+              {order.branchId && company?.branches && (
+                <span className="ml-2 px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded uppercase tracking-wider">
+                  {company.branches.find(b => b.id === order.branchId)?.name || 'Точка'}
+                </span>
+              )}
             </p>
           </div>
         </div>
@@ -443,6 +449,31 @@ const OrderDetails = ({ user, userData }) => {
                       onChange={handleEditInputChange}
                     />
                   </div>
+                  {company?.branches && company.branches.length > 0 && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest">
+                        Точка (филиал)
+                      </label>
+                      <select
+                        name="branchId"
+                        className="stripe-input text-sm"
+                        value={editFormData.branchId || ''}
+                        onChange={handleEditInputChange}
+                      >
+                        <option value="">Без точки</option>
+                        {company.branches.map((branch) => (
+                          <option key={branch.id} value={branch.id}>
+                            {branch.name}
+                          </option>
+                        ))}
+                      </select>
+                      {order.branchId && (
+                        <p className="text-[10px] text-indigo-500 mt-1">
+                          Текущая точка: {company.branches.find(b => b.id === order.branchId)?.name || 'Неизвестно'}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest">

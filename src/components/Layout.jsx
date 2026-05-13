@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 
-const Layout = ({ children, company, userData, isAdmin }) => {
+const Layout = ({ children, company, userData, isAdmin, activeBranchId, onBranchChange }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
@@ -12,6 +12,8 @@ const Layout = ({ children, company, userData, isAdmin }) => {
         isAdmin={isAdmin}
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
+        activeBranchId={activeBranchId}
+        onBranchChange={onBranchChange}
       />
 
       {/* Main Content */}
