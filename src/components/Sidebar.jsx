@@ -55,14 +55,6 @@ const Sidebar = ({
           <LayoutDashboard className="w-5 h-5 mr-3" />
           Центр заказов
         </Link>
-        <Link
-          to="/create-order"
-          onClick={() => setIsSidebarOpen(false)}
-          className={navLinkClasses('/create-order')}
-        >
-          <PlusCircle className="w-5 h-5 mr-3" />
-          Создать заказ
-        </Link>
         {isAdmin && (
           <Link
             to="/users"

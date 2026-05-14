@@ -29,15 +29,15 @@ const BranchSelector = ({ company, activeBranchId, onBranchChange }) => {
         onClick={() => setIsOpen(!isOpen)}
         className={`
           flex items-center justify-between px-4 py-2 
-          bg-white border rounded-lg transition-all duration-200 min-w-[160px]
+          bg-white border rounded-lg transition-all duration-200 w-full md:min-w-[160px]
           ${isOpen 
             ? 'border-stripe-blue ring-2 ring-stripe-blue/10 shadow-sm' 
             : 'border-gray-200 hover:border-gray-300 shadow-stripe-sm'}
         `}
       >
-        <div className="flex items-center">
-          <MapPin className="w-4 h-4 mr-2 text-stripe-blue" />
-          <span className="text-sm font-semibold text-stripe-dark truncate max-w-[120px]">
+        <div className="flex items-center overflow-hidden">
+          <MapPin className="w-4 h-4 mr-2 flex-shrink-0 text-stripe-blue" />
+          <span className="text-sm font-semibold text-stripe-dark truncate">
             {activeBranch.name}
           </span>
         </div>

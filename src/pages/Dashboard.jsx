@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { orderService, ORDER_STATUS } from '../services/orderService';
 import { userService, USER_ROLES } from '../services/userService';
-import { Car, Clock, Search, AlertTriangle } from 'lucide-react';
+import { Car, Clock, Search, AlertTriangle, Plus } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { getStatusBadge, checkDelay } from '../utils/orderUtils.jsx';
@@ -69,27 +69,34 @@ const Dashboard = ({ user, userData, company, activeBranchId, onBranchChange }) 
           </p>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 items-center">
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <div className="flex-1 md:flex-none">
+        <div className="flex flex-col md:flex-row gap-4 items-center w-full md:w-auto">
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <button
+              onClick={() => navigate('/create-order')}
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-stripe-blue text-white rounded-lg text-sm font-semibold hover:bg-opacity-90 transition-all shadow-stripe-sm min-w-[120px]"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Добавить</span>
+            </button>
+            {userData?.role === USER_ROLES.ADMIN && (
+              <button
+                onClick={() => setShowArchived(!showArchived)}
+                className={`flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap min-w-[100px] ${
+                  showArchived
+                    ? 'bg-stripe-blue text-white'
+                    : 'bg-white text-stripe-slate border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                {showArchived ? 'Активные' : 'Архив'}
+              </button>
+            )}
+            <div className="flex-1 md:flex-none min-w-[160px]">
               <BranchSelector 
                 company={company} 
                 activeBranchId={activeBranchId} 
                 onBranchChange={onBranchChange} 
               />
             </div>
-            {userData?.role === USER_ROLES.ADMIN && (
-              <button
-                onClick={() => setShowArchived(!showArchived)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
-                  showArchived
-                    ? 'bg-stripe-blue text-white'
-                    : 'bg-white text-stripe-slate border border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                {showArchived ? 'Показать активные' : 'Архив'}
-              </button>
-            )}
           </div>
           <div className="relative group w-full md:w-auto">
             <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-stripe-blue transition-colors" />
