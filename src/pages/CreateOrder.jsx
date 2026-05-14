@@ -144,7 +144,7 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
           {company?.branches && company.branches.length > 0 && (
             <div className="space-y-1">
               <label className="block text-sm font-bold text-stripe-dark">
-                Точка (филиал) *
+                Филиал *
               </label>
               <select
                 name="branchId"

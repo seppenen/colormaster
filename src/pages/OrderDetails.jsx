@@ -341,7 +341,7 @@ const OrderDetails = ({ user, userData, company }) => {
                 : ''}
               {order.branchId && company?.branches && (
                 <span className="ml-2 px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded uppercase tracking-wider">
-                  {company.branches.find(b => b.id === order.branchId)?.name || 'Точка'}
+                  {company.branches.find(b => b.id === order.branchId)?.name || 'Филиал'}
                 </span>
               )}
             </p>
@@ -452,7 +452,7 @@ const OrderDetails = ({ user, userData, company }) => {
                   {company?.branches && company.branches.length > 0 && (
                     <div className="space-y-1">
                       <label className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest">
-                        Точка (филиал)
+                        Филиал
                       </label>
                       <select
                         name="branchId"
@@ -460,7 +460,7 @@ const OrderDetails = ({ user, userData, company }) => {
                         value={editFormData.branchId || ''}
                         onChange={handleEditInputChange}
                       >
-                        <option value="">Без точки</option>
+                        <option value="">Без филиала</option>
                         {company.branches.map((branch) => (
                           <option key={branch.id} value={branch.id}>
                             {branch.name}
@@ -469,7 +469,7 @@ const OrderDetails = ({ user, userData, company }) => {
                       </select>
                       {order.branchId && (
                         <p className="text-[10px] text-indigo-500 mt-1">
-                          Текущая точка: {company.branches.find(b => b.id === order.branchId)?.name || 'Неизвестно'}
+                          Текущий филиал: {company.branches.find(b => b.id === order.branchId)?.name || 'Неизвестно'}
                         </p>
                       )}
                     </div>

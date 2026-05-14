@@ -41,8 +41,8 @@ const Sidebar = ({
   }, []);
 
   const activeBranch = activeBranchId === 'all' 
-    ? { id: 'all', name: 'Все локации' }
-    : company?.branches?.find(b => b.id === activeBranchId) || { id: 'all', name: 'Все локации' };
+    ? { id: 'all', name: 'Все филиалы' }
+    : company?.branches?.find(b => b.id === activeBranchId) || { id: 'all', name: 'Все филиалы' };
 
   const navLinkClasses = (path) => {
     const isActive = location.pathname === path;
@@ -76,7 +76,7 @@ const Sidebar = ({
           <div className="relative" ref={dropdownRef}>
             <div className="flex items-center text-[10px] uppercase tracking-widest text-stripe-slate font-bold mb-2 px-1">
               <MapPin className="w-3 h-3 mr-1.5 text-stripe-blue" />
-              Выберите локацию
+              Выберите филиал
             </div>
             
             <button

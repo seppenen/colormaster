@@ -20,7 +20,7 @@ const CreateCompany = ({ user, onCompanyCreated }) => {
       onCompanyCreated(company);
     } catch (err) {
       console.error(err);
-      setError('Ошибка при создании компании');
+      setError('Ошибка при создании филиала');
     } finally {
       setLoading(false);
     }
@@ -35,7 +35,7 @@ const CreateCompany = ({ user, onCompanyCreated }) => {
           </div>
         </div>
         <h1 className="text-3xl font-bold mb-2 text-center text-stripe-dark tracking-tight">
-          Создайте компанию
+          Создайте филиал
         </h1>
         <p className="text-center text-stripe-slate mb-8">
           Для начала работы необходимо зарегистрировать вашу автомастерскую
