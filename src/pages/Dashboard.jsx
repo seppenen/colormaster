@@ -6,8 +6,9 @@ import { Car, Clock, Search, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { getStatusBadge, checkDelay } from '../utils/orderUtils.jsx';
+import BranchSelector from '../components/BranchSelector';
 
-const Dashboard = ({ user, userData, company, activeBranchId }) => {
+const Dashboard = ({ user, userData, company, activeBranchId, onBranchChange }) => {
   const isAdmin = userData?.role === USER_ROLES.ADMIN;
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +20,8 @@ const Dashboard = ({ user, userData, company, activeBranchId }) => {
     const fetchOrders = async () => {
       if (!userData?.companyId) return;
       try {
-        const data = await orderService.getOrders(userData.companyId, activeBranchId);
+        const branchId = activeBranchId === 'all' ? null : activeBranchId;
+        const data = await orderService.getOrders(userData.companyId, branchId);
         setOrders(data);
       } catch (err) {
         console.error(err);
@@ -66,19 +68,29 @@ const Dashboard = ({ user, userData, company, activeBranchId }) => {
               : 'Управление и мониторинг активных заказов'}
           </p>
         </div>
+
         <div className="flex flex-col md:flex-row gap-4 items-center">
-          {userData?.role === USER_ROLES.ADMIN && (
-            <button
-              onClick={() => setShowArchived(!showArchived)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                showArchived
-                  ? 'bg-stripe-blue text-white'
-                  : 'bg-white text-stripe-slate border border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              {showArchived ? 'Показать активные' : 'Архив'}
-            </button>
-          )}
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="flex-1 md:flex-none">
+              <BranchSelector 
+                company={company} 
+                activeBranchId={activeBranchId} 
+                onBranchChange={onBranchChange} 
+              />
+            </div>
+            {userData?.role === USER_ROLES.ADMIN && (
+              <button
+                onClick={() => setShowArchived(!showArchived)}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+                  showArchived
+                    ? 'bg-stripe-blue text-white'
+                    : 'bg-white text-stripe-slate border border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                {showArchived ? 'Показать активные' : 'Архив'}
+              </button>
+            )}
+          </div>
           <div className="relative group w-full md:w-auto">
             <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-stripe-blue transition-colors" />
             <input

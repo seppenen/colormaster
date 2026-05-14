@@ -96,7 +96,8 @@ function App() {
                     user={user} 
                     userData={userData} 
                     company={company} 
-                    activeBranchId={activeBranchId === 'all' ? null : activeBranchId}
+                    activeBranchId={activeBranchId}
+                    onBranchChange={handleBranchChange}
                   />
                 </Layout>
               )
