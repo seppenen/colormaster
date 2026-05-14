@@ -153,7 +153,7 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
                 value={formData.branchId}
                 onChange={handleInputChange}
               >
-                <option value="">Выберите точку</option>
+                <option value="">Все</option>
                 {company.branches.map((branch) => (
                   <option key={branch.id} value={branch.id}>
                     {branch.name}
