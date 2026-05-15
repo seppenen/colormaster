@@ -60,7 +60,9 @@ const Reporting = ({ userData }) => {
 
   const getFilteredOrders = (userId) => {
     return orders.filter(order => {
-      const workerId = getWorkerFromHistory(order);
+      // Priority 1: explicitly assigned workerId
+      // Priority 2: fallback to history tracking
+      const workerId = order.workerId || getWorkerFromHistory(order);
       const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
       
       return workerId === userId && isSameMonth(orderDate, selectedMonth);

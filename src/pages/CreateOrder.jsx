@@ -17,11 +17,12 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
     viitenumero: '',
     description: '',
     price: '',
+    includeAlv: false,
     branchId: activeBranchId || '',
   });
 
   const handleInputChange = (e) => {
-    let { name, value } = e.target;
+    let { name, value, type, checked } = e.target;
     if (name === 'carNumber') {
       const val = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
       if (val.length > 3) {
@@ -30,7 +31,8 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
         value = val;
       }
     }
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const finalValue = type === 'checkbox' ? checked : value;
+    setFormData((prev) => ({ ...prev, [name]: finalValue }));
   };
 
   const handlePhotoChange = (e) => {
@@ -178,21 +180,48 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
         </div>
 
         {userData?.role === USER_ROLES.ADMIN && (
-          <div className="space-y-1">
-            <label className="block text-sm font-bold text-stripe-dark">
-              Ориентировочная цена (€)
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
-                €
-              </span>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <label className="block text-sm font-bold text-stripe-dark">
+                Ориентировочная цена (€)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
+                  €
+                </span>
+                <input
+                  type="number"
+                  name="price"
+                  className="stripe-input pl-8"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
               <input
-                type="number"
-                name="price"
-                className="stripe-input pl-8"
-                value={formData.price}
+                type="checkbox"
+                id="includeAlv"
+                name="includeAlv"
+                className="w-4 h-4 text-stripe-blue border-gray-300 rounded focus:ring-stripe-blue"
+                checked={formData.includeAlv}
                 onChange={handleInputChange}
               />
+              <label htmlFor="includeAlv" className="text-sm font-bold text-stripe-dark">
+                sis. alv.
+              </label>
+              {formData.price && !isNaN(formData.price) && (
+                <div className="flex flex-col ml-4 border-l pl-4 border-gray-100">
+                  <span className="text-[10px] text-stripe-slate uppercase font-bold tracking-wider">
+                    {formData.includeAlv ? 'Без ALV' : 'С ALV 25.5%'}
+                  </span>
+                  <span className="text-sm font-black text-stripe-dark">
+                    €{formData.includeAlv 
+                      ? (formData.price / 1.255).toFixed(2) 
+                      : (formData.price * 1.255).toFixed(2)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}

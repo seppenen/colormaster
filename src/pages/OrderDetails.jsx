@@ -48,6 +48,11 @@ const OrderDetails = ({ user, userData, company }) => {
     price: '',
     workerId: ''
   });
+  const [isEditingPrice, setIsEditingPrice] = useState(false);
+  const [priceFormData, setPriceFormData] = useState({
+    price: '',
+    includeAlv: false
+  });
   const isAdmin = userData?.role === USER_ROLES.ADMIN;
 
   useEffect(() => {
@@ -117,20 +122,38 @@ const OrderDetails = ({ user, userData, company }) => {
   };
 
   const handlePriceChange = async () => {
-    const newPrice = prompt('Введите новую цену:', order.price);
-    if (newPrice !== null && !isNaN(newPrice)) {
-      try {
-        await orderService.updateOrderPrice(id, Number(newPrice), user, userData);
-        const updatedOrder = await orderService.getOrder(id);
-        setOrder(updatedOrder);
-      } catch (err) {
-        console.error(err);
-      }
+    try {
+      await orderService.updateOrderPrice(id, Number(priceFormData.price), priceFormData.includeAlv, user, userData);
+      const updatedOrder = await orderService.getOrder(id);
+      setOrder(updatedOrder);
+      setIsEditingPrice(false);
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка при сохранении цены');
     }
+  };
+
+  const openPriceEdit = () => {
+    setPriceFormData({
+      price: order.price || '',
+      includeAlv: order.includeAlv || false
+    });
+    setIsEditingPrice(true);
   };
 
   const handleWorkerPriceChange = async () => {
     const { price, workerId } = workerPriceData;
+
+    if (!workerId) {
+      alert('Пожалуйста, выберите сотрудника');
+      return;
+    }
+
+    if (!price || isNaN(price) || Number(price) <= 0) {
+      alert('Пожалуйста, введите корректную сумму');
+      return;
+    }
+
     const selectedWorker = users.find(u => u.uid === workerId);
     const workerName = selectedWorker ? selectedWorker.name : '';
 
@@ -161,6 +184,7 @@ const OrderDetails = ({ user, userData, company }) => {
       viitenumero: order.viitenumero || '',
       description: order.description || '',
       branchId: order.branchId || '',
+      includeAlv: order.includeAlv || false,
     });
     setIsEditingDetails(true);
   };
@@ -178,7 +202,7 @@ const OrderDetails = ({ user, userData, company }) => {
   };
 
   const handleEditInputChange = (e) => {
-    let { name, value } = e.target;
+    let { name, value, type, checked } = e.target;
     if (name === 'carNumber') {
       const val = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
       if (val.length > 3) {
@@ -187,7 +211,8 @@ const OrderDetails = ({ user, userData, company }) => {
         value = val;
       }
     }
-    setEditFormData((prev) => ({ ...prev, [name]: value }));
+    const finalValue = type === 'checkbox' ? checked : value;
+    setEditFormData((prev) => ({ ...prev, [name]: finalValue }));
   };
 
   const handleDeleteOrder = async () => {
@@ -213,7 +238,7 @@ const OrderDetails = ({ user, userData, company }) => {
       case 'STATUS_CHANGED':
         return `Статус изменен: ${item.to}`;
       case 'PRICE_CHANGED':
-        return `Цена изменена: €${item.from || 0} → €${item.to}`;
+        return `Цена изменена: €${item.from || 0} → €${item.to}${item.includeAlv ? ' (sis. alv.)' : ''}`;
       case 'WORKER_PRICE_CHANGED':
         return `Зарплата ${item.workerName ? '(' + item.workerName + ') ' : ''}изменена: €${item.from || 0} → €${item.to}`;
       case 'DETAILS_CHANGED':
@@ -792,19 +817,97 @@ const OrderDetails = ({ user, userData, company }) => {
                 <h2 className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest mb-1">
                   Сумма заказа
                 </h2>
-                <div className="flex items-baseline group-hover:scale-[1.02] transition-transform origin-left">
-                  <span className="text-4xl font-black text-stripe-dark">€{order.price || '0'}</span>
-                  <span className="ml-2 text-xs font-bold text-stripe-slate uppercase tracking-wider">
-                    EUR
-                  </span>
-                </div>
-                <button
-                  onClick={handlePriceChange}
-                  className="mt-6 text-stripe-blue text-xs font-bold hover:underline flex items-center"
-                >
-                  <Edit2 className="w-3 h-3 mr-1" />
-                  Изменить сумму
-                </button>
+                {isEditingPrice ? (
+                  <div className="space-y-4 animate-in fade-in duration-200">
+                    <div className="space-y-2">
+                      <label className="text-[10px] text-stripe-slate uppercase font-bold">Сумма (€)</label>
+                      <input
+                        type="number"
+                        className="stripe-input text-lg font-bold"
+                        value={priceFormData.price}
+                        onChange={(e) => setPriceFormData(prev => ({ ...prev, price: e.target.value }))}
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="editIncludeAlv"
+                        className="w-4 h-4 text-stripe-blue border-gray-300 rounded focus:ring-stripe-blue"
+                        checked={priceFormData.includeAlv}
+                        onChange={(e) => setPriceFormData(prev => ({ ...prev, includeAlv: e.target.checked }))}
+                      />
+                      <label htmlFor="editIncludeAlv" className="text-xs font-bold text-stripe-dark">
+                        sis. alv.
+                      </label>
+                      {priceFormData.price && !isNaN(priceFormData.price) && (
+                        <div className="flex flex-col ml-auto pl-4 border-l border-gray-100">
+                          <span className="text-[8px] text-stripe-slate uppercase font-bold tracking-wider leading-none mb-1">
+                            {priceFormData.includeAlv ? 'Без ALV' : 'С ALV'}
+                          </span>
+                          <span className="text-xs font-black text-stripe-dark leading-none">
+                            €{priceFormData.includeAlv 
+                              ? (priceFormData.price / 1.255).toFixed(2) 
+                              : (priceFormData.price * 1.255).toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex space-x-2 pt-2">
+                      <button
+                        onClick={handlePriceChange}
+                        className="flex-1 bg-stripe-blue text-white py-2 rounded-lg text-xs font-bold hover:bg-blue-600 transition-colors"
+                      >
+                        Сохранить
+                      </button>
+                      <button
+                        onClick={() => setIsEditingPrice(false)}
+                        className="flex-1 bg-gray-100 text-stripe-slate py-2 rounded-lg text-xs font-bold hover:bg-gray-200 transition-colors"
+                      >
+                        Отмена
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-baseline group-hover:scale-[1.02] transition-transform origin-left">
+                      <span className="text-4xl font-black text-stripe-dark">€{order.price || '0'}</span>
+                      <span className="ml-2 text-xs font-bold text-stripe-slate uppercase tracking-wider">
+                        EUR {order.includeAlv && '(sis. alv.)'}
+                      </span>
+                    </div>
+                    {order.price && (
+                      <div className="mt-2 flex items-center space-x-4">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-stripe-slate uppercase font-bold tracking-wider">
+                            {order.includeAlv ? 'Без ALV' : 'С ALV 25.5%'}
+                          </span>
+                          <span className="text-sm font-bold text-stripe-dark">
+                            €{order.includeAlv 
+                              ? (order.price / 1.255).toFixed(2) 
+                              : (order.price * 1.255).toFixed(2)}
+                          </span>
+                        </div>
+                        {order.includeAlv && (
+                          <div className="flex flex-col border-l pl-4 border-gray-100">
+                            <span className="text-[10px] text-stripe-slate uppercase font-bold tracking-wider">
+                              АЛВ 25.5%
+                            </span>
+                            <span className="text-sm font-bold text-stripe-dark">
+                              €{(order.price - order.price / 1.255).toFixed(2)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <button
+                      onClick={openPriceEdit}
+                      className="mt-6 text-stripe-blue text-xs font-bold hover:underline flex items-center"
+                    >
+                      <Edit2 className="w-3 h-3 mr-1" />
+                      Изменить сумму
+                    </button>
+                  </>
+                )}
               </div>
             )}
 

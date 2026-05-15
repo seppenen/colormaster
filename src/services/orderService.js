@@ -33,6 +33,7 @@ export const orderService = {
 
     const newOrder = {
       ...orderData,
+      includeAlv: orderData.includeAlv || false,
       companyId,
       branchId,
       status: ORDER_STATUS.PENDING,
@@ -168,7 +169,7 @@ export const orderService = {
     await updateDoc(orderRef, updates);
   },
 
-  async updateOrderPrice(id, newPrice, user, userData) {
+  async updateOrderPrice(id, newPrice, includeAlv, user, userData) {
     const orderRef = doc(db, COLLECTION_NAME, id);
     const orderSnap = await getDoc(orderRef);
     const orderData = orderSnap.data();
@@ -177,6 +178,7 @@ export const orderService = {
       action: 'PRICE_CHANGED',
       from: orderData.price || 0,
       to: newPrice,
+      includeAlv: includeAlv,
       userId: user.uid,
       userName: userData?.name || user.displayName || user.email,
       timestamp: new Date(),
@@ -184,6 +186,7 @@ export const orderService = {
 
     await updateDoc(orderRef, {
       price: newPrice,
+      includeAlv: includeAlv,
       updatedAt: serverTimestamp(),
       history: [historyEntry, ...orderData.history],
     });
