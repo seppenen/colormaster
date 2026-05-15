@@ -26,6 +26,12 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (userData && userData.role !== USER_ROLES.ADMIN && userData.branchId) {
+      setActiveBranchId(userData.branchId);
+    }
+  }, [userData]);
+
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       if (user) {

@@ -20,7 +20,15 @@ const Users = ({ userData, company: initialCompany, onUpdateCompany }) => {
     email: '',
     password: '',
     role: USER_ROLES.EMPLOYEE,
+    branchId: '',
   })
+  const [editingUser, setEditingUser] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editUserData, setEditUserData] = useState({
+    name: '',
+    role: USER_ROLES.EMPLOYEE,
+    branchId: '',
+  });
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -50,6 +58,7 @@ const Users = ({ userData, company: initialCompany, onUpdateCompany }) => {
         name: newUserData.name,
         email: newUserData.email,
         role: newUserData.role,
+        branchId: newUserData.branchId || null,
         companyId: userData.companyId,
         isActive: true,
         createdAt: new Date(),
@@ -58,7 +67,7 @@ const Users = ({ userData, company: initialCompany, onUpdateCompany }) => {
       await userService.createUser(userProfile.uid, userProfile);
       setUsers([...users, userProfile]);
       setShowAddModal(false);
-      setNewUserData({ name: '', email: '', password: '', role: USER_ROLES.EMPLOYEE });
+      setNewUserData({ name: '', email: '', password: '', role: USER_ROLES.EMPLOYEE, branchId: '' });
     } catch (err) {
       console.error(err);
       alert('Ошибка при создании пользователя: ' + err.message);
@@ -152,6 +161,36 @@ const Users = ({ userData, company: initialCompany, onUpdateCompany }) => {
     }
   };
 
+  const handleUpdateUser = async (e) => {
+    e.preventDefault();
+    try {
+      const updateData = {
+        name: editUserData.name,
+        role: editUserData.role,
+        branchId: editUserData.branchId || null,
+      };
+      await userService.updateUser(editingUser.uid, updateData);
+      setUsers(users.map(u => u.uid === editingUser.uid ? { ...u, ...updateData } : u));
+      setShowEditModal(false);
+      setEditingUser(null);
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка при обновлении пользователя');
+    }
+  };
+
+  const handleEditClick = (u) => {
+    setEditingUser(u);
+    setEditUserData({
+      name: u.name,
+      role: u.role,
+      branchId: u.branchId || '',
+    });
+    setShowEditModal(true);
+  };
+
+  const branches = company.branches || [];
+
   if (loading)
     return (
       <div className="flex justify-center py-24">
@@ -217,10 +256,19 @@ const Users = ({ userData, company: initialCompany, onUpdateCompany }) => {
                     >
                       {u.isActive !== false ? 'Активен' : 'Заблокирован'}
                     </span>
+                    <span className="stripe-badge text-[10px] bg-blue-50 text-stripe-blue">
+                      {u.branchId ? branches.find(b => b.id === u.branchId)?.name || '???' : 'Все филиалы'}
+                    </span>
                   </div>
                 </div>
                 
                 <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => handleEditClick(u)}
+                    className="flex-1 text-xs font-bold uppercase tracking-wider py-2.5 rounded-lg transition-all border text-stripe-slate border-gray-100 bg-gray-50/50"
+                  >
+                    Изменить
+                  </button>
                   <button
                     onClick={() => toggleUserStatus(u.uid, u.isActive !== false)}
                     className={`flex-1 text-xs font-bold uppercase tracking-wider py-2.5 rounded-lg transition-all border ${
@@ -257,6 +305,9 @@ const Users = ({ userData, company: initialCompany, onUpdateCompany }) => {
                 Роль
               </th>
               <th className="px-6 py-4 text-left text-xs font-bold text-stripe-slate uppercase tracking-widest">
+                Филиал
+              </th>
+              <th className="px-6 py-4 text-left text-xs font-bold text-stripe-slate uppercase tracking-widest">
                 Статус
               </th>
               <th className="px-6 py-4 text-right text-xs font-bold text-stripe-slate uppercase tracking-widest">
@@ -286,6 +337,11 @@ const Users = ({ userData, company: initialCompany, onUpdateCompany }) => {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-stripe-slate">
+                    {u.branchId ? branches.find(b => b.id === u.branchId)?.name || '???' : 'Все'}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
                   <span
                     className={`stripe-badge ${u.isActive !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}
                   >
@@ -293,6 +349,13 @@ const Users = ({ userData, company: initialCompany, onUpdateCompany }) => {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2 items-center">
+                  <button
+                    onClick={() => handleEditClick(u)}
+                    className="p-2 text-stripe-slate hover:text-stripe-blue hover:bg-stripe-light rounded-md transition-all border border-transparent hover:border-stripe-blue/10 min-h-[36px]"
+                    title="Редактировать"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={() => toggleUserStatus(u.uid, u.isActive !== false)}
                     className={`text-xs font-bold uppercase tracking-wider px-3 py-2 rounded-md transition-all border min-h-[36px] ${
@@ -434,6 +497,64 @@ const Users = ({ userData, company: initialCompany, onUpdateCompany }) => {
         </div>
       )}
 
+      {showEditModal && (
+        <div className="fixed inset-0 bg-stripe-dark/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="stripe-card w-full max-w-md p-8 animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-stripe-dark tracking-tight">Редактировать сотрудника</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-stripe-slate hover:text-stripe-dark"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <form onSubmit={handleUpdateUser} className="space-y-6">
+              <div className="space-y-1">
+                <label className="block text-sm font-bold text-stripe-dark">Имя сотрудника</label>
+                <input
+                  type="text"
+                  required
+                  className="stripe-input"
+                  placeholder="Имя Фамилия"
+                  value={editUserData.name}
+                  onChange={(e) => setEditUserData({ ...editUserData, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-bold text-stripe-dark">Роль</label>
+                <select
+                  className="stripe-input"
+                  value={editUserData.role}
+                  onChange={(e) => setEditUserData({ ...editUserData, role: e.target.value })}
+                >
+                  <option value={USER_ROLES.EMPLOYEE}>Сотрудник</option>
+                  <option value={USER_ROLES.ADMIN}>Администратор</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-bold text-stripe-dark">Филиал</label>
+                <select
+                  className="stripe-input"
+                  value={editUserData.branchId}
+                  onChange={(e) => setEditUserData({ ...editUserData, branchId: e.target.value })}
+                >
+                  <option value="">Все филиалы (Админ)</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button type="submit" className="w-full stripe-button-primary py-3 pt-4">
+                Сохранить изменения
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {showAddModal && (
         <div className="fixed inset-0 bg-stripe-dark/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div className="stripe-card w-full max-w-md p-8 animate-in zoom-in-95 duration-200">
@@ -490,6 +611,21 @@ const Users = ({ userData, company: initialCompany, onUpdateCompany }) => {
                 >
                   <option value={USER_ROLES.EMPLOYEE}>Сотрудник</option>
                   <option value={USER_ROLES.ADMIN}>Администратор</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="block text-sm font-bold text-stripe-dark">Филиал</label>
+                <select
+                  className="stripe-input"
+                  value={newUserData.branchId}
+                  onChange={(e) => setNewUserData({ ...newUserData, branchId: e.target.value })}
+                >
+                  <option value="">Все филиалы (Админ)</option>
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <button type="submit" className="w-full stripe-button-primary py-3 pt-4">

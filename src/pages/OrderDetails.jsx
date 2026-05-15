@@ -78,6 +78,14 @@ const OrderDetails = ({ user, userData, company }) => {
     const fetchOrder = async () => {
       try {
         const data = await orderService.getOrder(id);
+        
+        // Check if user has access to this branch
+        if (data && userData.role !== USER_ROLES.ADMIN && userData.branchId && data.branchId !== userData.branchId) {
+          alert('У вас нет доступа к заказам этого филиала');
+          navigate('/');
+          return;
+        }
+
         setOrder(data);
         if (data) {
           setWorkerPriceData({
@@ -249,6 +257,12 @@ const OrderDetails = ({ user, userData, company }) => {
         return `Добавлено фото: ${item.count}`;
       case 'PHOTO_DELETED':
         return 'Фото удалено';
+      case 'COMMENT_ADDED':
+        return 'Комментарий добавлен';
+      case 'COMMENT_UPDATED':
+        return 'Комментарий изменен';
+      case 'COMMENT_DELETED':
+        return 'Комментарий удален';
       default:
         return item.status || 'Статус обновлен';
     }
@@ -595,13 +609,71 @@ const OrderDetails = ({ user, userData, company }) => {
               <div className="space-y-4">
                 {/* Legacy single comment support */}
                 {order.comment && (!order.comments || order.comments.length === 0) && (
-                  <div className="bg-white p-4 rounded-lg border border-indigo-100 shadow-sm">
-                    <p className="text-indigo-900 text-sm font-medium leading-relaxed">
-                      {order.comment}
-                    </p>
-                    <p className="mt-2 text-[10px] text-indigo-400 italic">
-                      Старый формат комментария
-                    </p>
+                  <div className="bg-white p-4 rounded-lg border border-indigo-100 shadow-sm group">
+                    {editingCommentId === 'legacy' ? (
+                      <div className="space-y-3">
+                        <textarea
+                          className="w-full bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-sm text-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-h-[80px]"
+                          value={editingCommentText}
+                          onChange={(e) => setEditingCommentText(e.target.value)}
+                        />
+                        <div className="flex justify-end space-x-2">
+                          <button
+                            onClick={() => setEditingCommentId(null)}
+                            className="px-3 py-1.5 text-xs font-bold text-indigo-600 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
+                          >
+                            Отмена
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!editingCommentText.trim()) return;
+                              try {
+                                await orderService.addOrderComment(id, editingCommentText, user, userData);
+                                await orderService.updateOrderDetails(id, { comment: null }, user, userData);
+                                const updatedOrder = await orderService.getOrder(id);
+                                setOrder(updatedOrder);
+                                setEditingCommentId(null);
+                                setEditingCommentText('');
+                              } catch (err) {
+                                console.error(err);
+                                alert('Ошибка при обновлении комментария');
+                              }
+                            }}
+                            className="px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+                          >
+                            Сохранить
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-tight">
+                            Система
+                          </span>
+                          <span className="text-[10px] text-indigo-400 italic">
+                            Старый формат
+                          </span>
+                        </div>
+                        <p className="text-indigo-900 text-sm font-medium leading-relaxed whitespace-pre-wrap">
+                          {order.comment}
+                        </p>
+                        {isAdmin && (
+                          <div className="flex space-x-3 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => {
+                                setEditingCommentId('legacy');
+                                setEditingCommentText(order.comment);
+                              }}
+                              className="text-[10px] font-bold text-indigo-400 hover:text-indigo-600 flex items-center"
+                            >
+                              <Edit2 className="w-3 h-3 mr-1" />
+                              Изменить
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -637,11 +709,18 @@ const OrderDetails = ({ user, userData, company }) => {
                             <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-tight">
                               {comment.userName}
                             </span>
-                            <span className="text-[10px] text-indigo-400">
-                              {comment.timestamp?.toDate
-                                ? format(comment.timestamp.toDate(), 'dd.MM.yy HH:mm', { locale: ru })
-                                : format(new Date(comment.timestamp), 'dd.MM.yy HH:mm', { locale: ru })}
-                            </span>
+                            <div className="flex items-center space-x-2">
+                              {comment.updatedAt && (
+                                <span className="text-[10px] text-indigo-400 italic">
+                                  (изменено)
+                                </span>
+                              )}
+                              <span className="text-[10px] text-indigo-400">
+                                {comment.timestamp?.toDate
+                                  ? format(comment.timestamp.toDate(), 'dd.MM.yy HH:mm', { locale: ru })
+                                  : format(new Date(comment.timestamp), 'dd.MM.yy HH:mm', { locale: ru })}
+                              </span>
+                            </div>
                           </div>
                           <p className="text-indigo-900 text-sm font-medium leading-relaxed whitespace-pre-wrap">
                             {comment.text}
@@ -782,17 +861,22 @@ const OrderDetails = ({ user, userData, company }) => {
             <div className="mb-8 flex justify-center">{getStatusBadge(order, isAdmin)}</div>
             <div className="space-y-3">
               {Object.values(ORDER_STATUS)
-                .filter((status) => status !== ORDER_STATUS.LASKUTETTU || isAdmin)
+                .filter((status) => {
+                  if (status === ORDER_STATUS.LASKUTETTU || status === ORDER_STATUS.SAVAS_SENT) {
+                    return isAdmin;
+                  }
+                  return true;
+                })
                 .map((status) => (
                   <button
                     key={status}
-                    disabled={!isAdmin && status === ORDER_STATUS.LASKUTETTU}
+                    disabled={!isAdmin && (status === ORDER_STATUS.LASKUTETTU || status === ORDER_STATUS.SAVAS_SENT)}
                     onClick={() => handleStatusChange(status)}
                     className={`w-full text-left px-4 py-4 rounded-xl transition-all font-bold text-sm border-2 min-h-[56px] ${
                       order.status === status
                         ? 'bg-stripe-blue/10 border-stripe-blue text-stripe-blue'
                         : 'bg-stripe-darker border-transparent text-gray-500 hover:text-gray-300 hover:bg-stripe-darker/80'
-                    } ${!isAdmin && status === ORDER_STATUS.LASKUTETTU ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    } ${!isAdmin && (status === ORDER_STATUS.LASKUTETTU || status === ORDER_STATUS.SAVAS_SENT) ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center">
                       <div

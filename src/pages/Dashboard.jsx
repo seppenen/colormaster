@@ -42,9 +42,9 @@ const Dashboard = ({ user, userData, company, activeBranchId, onBranchChange }) 
       order.viitenumero?.toLowerCase().includes(searchLower);
 
     if (showArchived) {
-      return matchesSearch && order.status === ORDER_STATUS.LASKUTETTU;
+      return matchesSearch && (order.status === ORDER_STATUS.LASKUTETTU || order.status === ORDER_STATUS.SAVAS_SENT);
     } else {
-      return matchesSearch && order.status !== ORDER_STATUS.LASKUTETTU;
+      return matchesSearch && (order.status !== ORDER_STATUS.LASKUTETTU && order.status !== ORDER_STATUS.SAVAS_SENT);
     }
   });
 
@@ -91,11 +91,13 @@ const Dashboard = ({ user, userData, company, activeBranchId, onBranchChange }) 
               </button>
             )}
             <div className="flex-1 md:flex-none min-w-[160px]">
-              <BranchSelector 
-                company={company} 
-                activeBranchId={activeBranchId} 
-                onBranchChange={onBranchChange} 
-              />
+              {(userData?.role === USER_ROLES.ADMIN || !userData?.branchId) && (
+                <BranchSelector 
+                  company={company} 
+                  activeBranchId={activeBranchId} 
+                  onBranchChange={onBranchChange} 
+                />
+              )}
             </div>
           </div>
           <div className="relative group w-full md:w-auto">
@@ -140,6 +142,9 @@ const Dashboard = ({ user, userData, company, activeBranchId, onBranchChange }) 
                 <div className="flex justify-between items-end mt-4">
                   <div className="space-y-1">
                     <div className="text-xs font-medium text-stripe-dark">{order.clientName}</div>
+                    <div className="text-[10px] text-stripe-blue font-medium">
+                      {company?.branches?.find(b => b.id === order.branchId)?.name}
+                    </div>
                     <div className="text-[11px] text-stripe-slate flex items-center">
                       <Clock className="w-3 h-3 mr-1" />
                       {order.createdAt
@@ -170,6 +175,9 @@ const Dashboard = ({ user, userData, company, activeBranchId, onBranchChange }) 
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-stripe-slate uppercase tracking-widest">
                   Клиент
+                </th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-stripe-slate uppercase tracking-widest">
+                  Филиал
                 </th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-stripe-slate uppercase tracking-widest">
                   Статус
@@ -215,6 +223,11 @@ const Dashboard = ({ user, userData, company, activeBranchId, onBranchChange }) 
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-stripe-dark">{order.clientName}</div>
                       <div className="text-xs text-stripe-slate">{order.clientPhone}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-stripe-dark">
+                        {company?.branches?.find(b => b.id === order.branchId)?.name || '—'}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-col space-y-1">

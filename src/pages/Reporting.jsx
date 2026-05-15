@@ -21,8 +21,19 @@ const Reporting = ({ userData }) => {
           userService.getAllUsers(userData.companyId),
           orderService.getOrders(userData.companyId)
         ]);
-        setUsers(usersData);
-        setOrders(ordersData);
+        
+        // If employee has a branch, they should only see users and orders from their branch
+        // Note: Admin still sees everything
+        let filteredUsers = usersData;
+        let filteredOrders = ordersData;
+        
+        if (userData.role !== USER_ROLES.ADMIN && userData.branchId) {
+          filteredUsers = usersData.filter(u => u.branchId === userData.branchId);
+          filteredOrders = ordersData.filter(o => o.branchId === userData.branchId);
+        }
+
+        setUsers(filteredUsers);
+        setOrders(filteredOrders);
       } catch (err) {
         console.error('Error fetching data:', err);
       } finally {
@@ -53,7 +64,7 @@ const Reporting = ({ userData }) => {
     // Look for who moved to IN_PROGRESS or READY or DELIVERED
     const relevantActions = ['IN_PROGRESS', 'READY', 'DELIVERED', 'STATUS_CHANGED'];
     const workerEntry = order.history.find(h => 
-      (h.to === ORDER_STATUS.IN_PROGRESS || h.to === ORDER_STATUS.READY || h.to === ORDER_STATUS.DELIVERED) && h.userId
+      (h.to === ORDER_STATUS.IN_PROGRESS || h.to === ORDER_STATUS.READY || h.to === ORDER_STATUS.DELIVERED || h.to === ORDER_STATUS.SAVAS_SENT) && h.userId
     );
     return workerEntry ? workerEntry.userId : order.createdBy;
   };

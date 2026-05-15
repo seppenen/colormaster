@@ -18,7 +18,7 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
     description: '',
     price: '',
     includeAlv: false,
-    branchId: activeBranchId || '',
+    branchId: userData?.branchId || activeBranchId || '',
   });
 
   const handleInputChange = (e) => {
