@@ -114,6 +114,65 @@ export const orderService = {
     return null;
   },
 
+  async sendOrderEmail(order, company) {
+    console.log('Attempting to send email via Firestore Extension to:', order.clientEmail);
+    if (!order.clientEmail) {
+      console.log('No client email found in order object');
+      return;
+    }
+
+    const publicUrl = `${window.location.origin}/v/${order.id}`;
+    
+    try {
+      // Document structure according to Firebase Trigger Email extension documentation:
+      // https://firebase.google.com/docs/extensions/official/firestore-send-email
+      const emailDoc = {
+        to: [order.clientEmail], // Array is preferred and more reliable
+        message: {
+          subject: `Заказ ${order.carNumber || ''} - ${company?.name || ''}`,
+          text: `Здравствуйте, ${order.clientName || 'клиент'}!\n\nВаш заказ успешно создан. Вы можете отслеживать статус работ и просматривать фотографии по следующей ссылке:\n\n${publicUrl}\n\nС уважением,\n${company?.name || 'Команда мастерской'}`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
+              <h2 style="color: #333;">Здравствуйте, ${order.clientName || 'клиент'}!</h2>
+              <p style="font-size: 16px; color: #555;">Ваш заказ успешно создан и находится в работе.</p>
+              <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 0; color: #777; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Автомобиль</p>
+                <p style="margin: 5px 0 0 0; font-size: 18px; font-weight: bold;">${order.carModel || 'Не указано'}</p>
+                ${order.carNumber ? `<p style="margin: 5px 0 0 0; font-family: monospace; font-size: 16px;">${order.carNumber}</p>` : ''}
+              </div>
+              <p style="font-size: 16px; color: #555;">Вы можете отслеживать статус работ и просматривать фотографии по ссылке ниже:</p>
+              <a href="${publicUrl}" style="display: inline-block; background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 10px 0;">Посмотреть заказ</a>
+              <p style="font-size: 14px; color: #999; margin-top: 30px;">
+                С уважением,<br>
+                ${company?.name || 'Команда мастерской'}
+              </p>
+            </div>
+          `
+        },
+        createdAt: serverTimestamp(),
+        orderId: order.id,
+        // Optional tracking fields
+        delivery: {
+          state: 'PENDING',
+          attempts: 0
+        }
+      };
+
+      console.log('Final Email Document structure:', JSON.stringify({
+        to: emailDoc.to,
+        subject: emailDoc.message.subject,
+        orderId: emailDoc.orderId
+      }));
+
+      const docRef = await addDoc(collection(db, 'mail'), emailDoc);
+      console.log('Email document created successfully in Firestore with ID:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('CRITICAL: Error creating email document in Firestore:', error);
+      throw error;
+    }
+  },
+
   async updateOrderStatus(id, newStatus, user, userData) {
     const orderRef = doc(db, COLLECTION_NAME, id);
     const orderSnap = await getDoc(orderRef);

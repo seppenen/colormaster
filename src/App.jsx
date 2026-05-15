@@ -17,6 +17,7 @@ import CreateOrder from './pages/CreateOrder';
 import OrderDetails from './pages/OrderDetails';
 import Users from './pages/Users';
 import Reporting from './pages/Reporting';
+import CustomerOrderView from './pages/CustomerOrderView';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -193,6 +194,8 @@ function App() {
             )
           }
         />
+
+        <Route path="/v/:id" element={<CustomerOrderView />} />
       </Routes>
     </Router>
   );

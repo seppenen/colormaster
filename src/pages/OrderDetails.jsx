@@ -15,6 +15,7 @@ import {
   Clock,
   AlertTriangle,
   Euro,
+  Share2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -33,6 +34,7 @@ const OrderDetails = ({ user, userData, company }) => {
     carNumber: '',
     clientName: '',
     clientPhone: '',
+    clientEmail: '',
     viitenumero: '',
     description: '',
   });
@@ -189,6 +191,7 @@ const OrderDetails = ({ user, userData, company }) => {
       carNumber: order.carNumber || '',
       clientName: order.clientName || '',
       clientPhone: order.clientPhone || '',
+      clientEmail: order.clientEmail || '',
       viitenumero: order.viitenumero || '',
       description: order.description || '',
       branchId: order.branchId || '',
@@ -237,6 +240,26 @@ const OrderDetails = ({ user, userData, company }) => {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleShareLink = async () => {
+    const publicUrl = `${window.location.origin}/v/${id}`;
+    if (order.clientEmail) {
+      try {
+        await orderService.sendOrderEmail(order, company);
+        alert('Запрос на отправку письма создан успешно.');
+      } catch (err) {
+        console.error('Error sending email:', err);
+        if (window.confirm('Не удалось отправить письмо автоматически. Открыть почтовую программу?')) {
+          const subject = encodeURIComponent(`Заказ ${order.carNumber || ''} - ${company?.name || ''}`);
+          const body = encodeURIComponent(`Здравствуйте, ${order.clientName}!\n\nВы можете отслеживать статус работ и просматривать фотографии вашего автомобиля по следующей ссылке:\n\n${publicUrl}\n\nС уважением,\n${company?.name || ''}`);
+          window.location.href = `mailto:${order.clientEmail}?subject=${subject}&body=${body}`;
+        }
+      }
+    } else {
+      navigator.clipboard.writeText(publicUrl);
+      alert('Ссылка для клиента скопирована в буфер обмена');
+    }
   };
 
   const getHistoryText = (item) => {
@@ -412,6 +435,13 @@ const OrderDetails = ({ user, userData, company }) => {
             <Printer className="w-4 h-4 mr-2" />
             Печать
           </button>
+          <button
+            onClick={handleShareLink}
+            className="stripe-button-primary flex items-center w-full sm:w-auto px-4 py-2"
+          >
+            <Share2 className="w-4 h-4 mr-2" />
+            Отправить клиенту
+          </button>
         </div>
       </div>
 
@@ -473,6 +503,18 @@ const OrderDetails = ({ user, userData, company }) => {
                       name="clientPhone"
                       className="stripe-input text-sm"
                       value={editFormData.clientPhone}
+                      onChange={handleEditInputChange}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      name="clientEmail"
+                      className="stripe-input text-sm"
+                      value={editFormData.clientEmail}
                       onChange={handleEditInputChange}
                     />
                   </div>
@@ -565,6 +607,12 @@ const OrderDetails = ({ user, userData, company }) => {
                       Телефон
                     </p>
                     <p className="text-lg font-bold text-stripe-dark">{order.clientPhone || '—'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest">
+                      Email
+                    </p>
+                    <p className="text-lg font-bold text-stripe-dark">{order.clientEmail || '—'}</p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest">

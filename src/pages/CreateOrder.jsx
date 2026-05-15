@@ -14,6 +14,7 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
     carNumber: '',
     clientName: '',
     clientPhone: '',
+    clientEmail: '',
     viitenumero: '',
     description: '',
     price: '',
@@ -54,7 +55,7 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await orderService.createOrder(
+      const result = await orderService.createOrder(
         formData,
         photos,
         user,
@@ -62,6 +63,24 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
         userData,
         formData.branchId || null
       );
+      
+      // If client email is provided, send email via Firestore (Trigger Email extension)
+      if (formData.clientEmail) {
+        try {
+          await orderService.sendOrderEmail({ id: result.id, ...formData }, company);
+          alert('Заказ создан. Письмо клиенту отправлено.');
+        } catch (emailErr) {
+          console.error('Error sending email via Firestore:', emailErr);
+          // Fallback to mailto if needed
+          if (window.confirm('Не удалось отправить письмо автоматически. Открыть почтовую программу?')) {
+            const publicUrl = `${window.location.origin}/v/${result.id}`;
+            const subject = encodeURIComponent(`Заказ ${formData.carNumber || ''} - ${company?.name || ''}`);
+            const body = encodeURIComponent(`Здравствуйте, ${formData.clientName}!\n\nВаш заказ успешно создан. Вы можете отслеживать статус работ и просматривать фотографии по следующей ссылке:\n\n${publicUrl}\n\nС уважением,\n${company?.name || ''}`);
+            window.location.href = `mailto:${formData.clientEmail}?subject=${subject}&body=${body}`;
+          }
+        }
+      }
+      
       navigate('/');
     } catch (err) {
       console.error(err);
@@ -128,6 +147,17 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
               className="stripe-input"
               placeholder="+358 40 123 4567"
               value={formData.clientPhone}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-sm font-bold text-stripe-dark">Email клиента</label>
+            <input
+              type="email"
+              name="clientEmail"
+              className="stripe-input"
+              placeholder="client@example.com"
+              value={formData.clientEmail}
               onChange={handleInputChange}
             />
           </div>
