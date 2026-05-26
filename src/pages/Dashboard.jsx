@@ -43,9 +43,9 @@ const Dashboard = ({ user, userData, company, activeBranchId, onBranchChange }) 
         order.viitenumero?.toLowerCase().includes(searchLower);
 
       if (showArchived) {
-        return matchesSearch && (order.status === ORDER_STATUS.LASKUTETTU || order.status === ORDER_STATUS.SAVAS_SENT);
+        return matchesSearch && (order.status === ORDER_STATUS.LASKUTETTU);
       } else {
-        return matchesSearch && (order.status !== ORDER_STATUS.LASKUTETTU && order.status !== ORDER_STATUS.SAVAS_SENT);
+        return matchesSearch && (order.status !== ORDER_STATUS.LASKUTETTU);
       }
     })
     .sort((a, b) => {
@@ -57,7 +57,6 @@ const Dashboard = ({ user, userData, company, activeBranchId, onBranchChange }) 
         [ORDER_STATUS.READY]: 5,
         [ORDER_STATUS.DELIVERED]: 6,
         [ORDER_STATUS.LASKUTETTU]: 7,
-        [ORDER_STATUS.SAVAS_SENT]: 8,
       };
 
       const priorityA = priority[a.status] || 99;

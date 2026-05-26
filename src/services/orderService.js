@@ -25,7 +25,6 @@ export const ORDER_STATUS = {
   READY: 'Готово',
   DELIVERED: 'Отдано',
   LASKUTETTU: 'Lasku OK',
-  SAVAS_SENT: 'Отправлено в Саваs',
 };
 
 export const orderService = {

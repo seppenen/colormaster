@@ -63,12 +63,6 @@ export const getStatusBadge = (order, isAdmin = false) => {
       );
     case ORDER_STATUS.LASKUTETTU:
       return <span className={`${baseClasses} bg-gray-200 text-gray-700 font-bold`}>{status}</span>;
-    case ORDER_STATUS.SAVAS_SENT:
-      return (
-        <span className={`${baseClasses} bg-blue-50 text-blue-700 border border-blue-200 font-bold`}>
-          {status}
-        </span>
-      );
     default:
       return (
         <span className={`${baseClasses} bg-gray-100 text-stripe-slate font-bold`}>{status}</span>
@@ -79,8 +73,7 @@ export const getStatusBadge = (order, isAdmin = false) => {
 export const checkDelay = (order) => {
   if (
     order.status === ORDER_STATUS.DELIVERED || 
-    order.status === ORDER_STATUS.LASKUTETTU ||
-    order.status === ORDER_STATUS.SAVAS_SENT
+    order.status === ORDER_STATUS.LASKUTETTU
   )
     return null;
   if (order.status !== ORDER_STATUS.PENDING) return null;

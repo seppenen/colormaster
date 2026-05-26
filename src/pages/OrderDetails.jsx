@@ -862,7 +862,7 @@ const OrderDetails = ({ user, userData, company }) => {
             <div className="space-y-3">
               {Object.values(ORDER_STATUS)
                 .filter((status) => {
-                  if (status === ORDER_STATUS.LASKUTETTU || status === ORDER_STATUS.SAVAS_SENT) {
+                  if (status === ORDER_STATUS.LASKUTETTU) {
                     return isAdmin;
                   }
                   return true;
@@ -870,13 +870,13 @@ const OrderDetails = ({ user, userData, company }) => {
                 .map((status) => (
                   <button
                     key={status}
-                    disabled={!isAdmin && (status === ORDER_STATUS.LASKUTETTU || status === ORDER_STATUS.SAVAS_SENT)}
+                    disabled={!isAdmin && (status === ORDER_STATUS.LASKUTETTU)}
                     onClick={() => handleStatusChange(status)}
                     className={`w-full text-left px-4 py-4 rounded-xl transition-all font-bold text-sm border-2 min-h-[56px] ${
                       order.status === status
                         ? 'bg-stripe-blue/10 border-stripe-blue text-stripe-blue'
                         : 'bg-stripe-darker border-transparent text-gray-500 hover:text-gray-300 hover:bg-stripe-darker/80'
-                    } ${!isAdmin && (status === ORDER_STATUS.LASKUTETTU || status === ORDER_STATUS.SAVAS_SENT) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    } ${!isAdmin && (status === ORDER_STATUS.LASKUTETTU) ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-center">
                       <div

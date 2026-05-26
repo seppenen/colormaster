@@ -64,7 +64,7 @@ const Reporting = ({ userData }) => {
     // Look for who moved to IN_PROGRESS or READY or DELIVERED
     const relevantActions = ['IN_PROGRESS', 'READY', 'DELIVERED', 'STATUS_CHANGED'];
     const workerEntry = order.history.find(h => 
-      (h.to === ORDER_STATUS.IN_PROGRESS || h.to === ORDER_STATUS.READY || h.to === ORDER_STATUS.DELIVERED || h.to === ORDER_STATUS.SAVAS_SENT) && h.userId
+      (h.to === ORDER_STATUS.IN_PROGRESS || h.to === ORDER_STATUS.READY || h.to === ORDER_STATUS.DELIVERED) && h.userId
     );
     return workerEntry ? workerEntry.userId : order.createdBy;
   };
