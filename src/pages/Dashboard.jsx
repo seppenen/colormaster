@@ -32,21 +32,46 @@ const Dashboard = ({ user, userData, company, activeBranchId, onBranchChange }) 
     fetchOrders();
   }, [userData?.companyId, activeBranchId]);
 
-  const filteredOrders = orders.filter((order) => {
-    const searchLower = searchTerm.toLowerCase();
-    const matchesSearch =
-      order.carModel?.toLowerCase().includes(searchLower) ||
-      order.carNumber?.toLowerCase().includes(searchLower) ||
-      order.clientName?.toLowerCase().includes(searchLower) ||
-      order.clientPhone?.toLowerCase().includes(searchLower) ||
-      order.viitenumero?.toLowerCase().includes(searchLower);
+  const filteredOrders = orders
+    .filter((order) => {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch =
+        order.carModel?.toLowerCase().includes(searchLower) ||
+        order.carNumber?.toLowerCase().includes(searchLower) ||
+        order.clientName?.toLowerCase().includes(searchLower) ||
+        order.clientPhone?.toLowerCase().includes(searchLower) ||
+        order.viitenumero?.toLowerCase().includes(searchLower);
 
-    if (showArchived) {
-      return matchesSearch && (order.status === ORDER_STATUS.LASKUTETTU || order.status === ORDER_STATUS.SAVAS_SENT);
-    } else {
-      return matchesSearch && (order.status !== ORDER_STATUS.LASKUTETTU && order.status !== ORDER_STATUS.SAVAS_SENT);
-    }
-  });
+      if (showArchived) {
+        return matchesSearch && (order.status === ORDER_STATUS.LASKUTETTU || order.status === ORDER_STATUS.SAVAS_SENT);
+      } else {
+        return matchesSearch && (order.status !== ORDER_STATUS.LASKUTETTU && order.status !== ORDER_STATUS.SAVAS_SENT);
+      }
+    })
+    .sort((a, b) => {
+      const priority = {
+        [ORDER_STATUS.PENDING]: 1,
+        [ORDER_STATUS.WAITING_PARTS]: 2,
+        [ORDER_STATUS.AVAITING_WORK]: 3,
+        [ORDER_STATUS.IN_PROGRESS]: 4,
+        [ORDER_STATUS.READY]: 5,
+        [ORDER_STATUS.DELIVERED]: 6,
+        [ORDER_STATUS.LASKUTETTU]: 7,
+        [ORDER_STATUS.SAVAS_SENT]: 8,
+      };
+
+      const priorityA = priority[a.status] || 99;
+      const priorityB = priority[b.status] || 99;
+
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+
+      // Если приоритет одинаковый, сортируем по дате создания (новые сверху)
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+      return dateB - dateA;
+    });
 
   if (loading)
     return (

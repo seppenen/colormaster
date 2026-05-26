@@ -31,6 +31,21 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
         value = val;
       }
     }
+    if (name === 'includeAlv') {
+      const currentPrice = parseFloat(formData.price);
+      if (!isNaN(currentPrice)) {
+        let newPrice;
+        if (checked) {
+          // Если ставим галочку (включаем ALV), значит цена была без ALV, теперь должна быть с ALV
+          newPrice = (currentPrice * 1.255).toFixed(2);
+        } else {
+          // Если снимаем галочку, значит цена была с ALV, теперь должна быть без ALV
+          newPrice = (currentPrice / 1.255).toFixed(2);
+        }
+        setFormData((prev) => ({ ...prev, [name]: checked, price: newPrice }));
+        return;
+      }
+    }
     const finalValue = type === 'checkbox' ? checked : value;
     setFormData((prev) => ({ ...prev, [name]: finalValue }));
   };
@@ -196,6 +211,11 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
                   value={formData.price}
                   onChange={handleInputChange}
                 />
+                {formData.includeAlv && (
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-green-600 uppercase">
+                    sis. alv
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex items-center space-x-2">
@@ -210,18 +230,6 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
               <label htmlFor="includeAlv" className="text-sm font-bold text-stripe-dark">
                 sis. alv.
               </label>
-              {formData.price && !isNaN(formData.price) && (
-                <div className="flex flex-col ml-4 border-l pl-4 border-gray-100">
-                  <span className="text-[10px] text-stripe-slate uppercase font-bold tracking-wider">
-                    {formData.includeAlv ? 'Без ALV' : 'С ALV 25.5%'}
-                  </span>
-                  <span className="text-sm font-black text-stripe-dark">
-                    €{formData.includeAlv 
-                      ? (formData.price / 1.255).toFixed(2) 
-                      : (formData.price * 1.255).toFixed(2)}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
         )}

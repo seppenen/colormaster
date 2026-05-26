@@ -203,7 +203,7 @@ const Users = ({ userData, company: initialCompany, onUpdateCompany }) => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-stripe-dark">
-            Настройки филиала
+            Настройки
           </h1>
           <p className="text-stripe-slate mt-1 text-sm">
             Управление пользователями и филиалами

@@ -903,14 +903,19 @@ const OrderDetails = ({ user, userData, company }) => {
                 </h2>
                 {isEditingPrice ? (
                   <div className="space-y-4 animate-in fade-in duration-200">
-                    <div className="space-y-2">
+                    <div className="space-y-2 relative">
                       <label className="text-[10px] text-stripe-slate uppercase font-bold">Сумма (€)</label>
                       <input
                         type="number"
-                        className="stripe-input text-lg font-bold"
+                        className="stripe-input text-lg font-bold pr-16"
                         value={priceFormData.price}
                         onChange={(e) => setPriceFormData(prev => ({ ...prev, price: e.target.value }))}
                       />
+                      {priceFormData.includeAlv && (
+                        <span className="absolute right-3 top-[38px] text-[10px] font-bold text-green-600 uppercase">
+                          sis. alv
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center space-x-2">
                       <input
@@ -918,23 +923,25 @@ const OrderDetails = ({ user, userData, company }) => {
                         id="editIncludeAlv"
                         className="w-4 h-4 text-stripe-blue border-gray-300 rounded focus:ring-stripe-blue"
                         checked={priceFormData.includeAlv}
-                        onChange={(e) => setPriceFormData(prev => ({ ...prev, includeAlv: e.target.checked }))}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setPriceFormData(prev => {
+                            const currentPrice = parseFloat(prev.price);
+                            if (isNaN(currentPrice)) return { ...prev, includeAlv: checked };
+                            
+                            let newPrice;
+                            if (checked) {
+                              newPrice = (currentPrice * 1.255).toFixed(2);
+                            } else {
+                              newPrice = (currentPrice / 1.255).toFixed(2);
+                            }
+                            return { ...prev, includeAlv: checked, price: newPrice };
+                          });
+                        }}
                       />
                       <label htmlFor="editIncludeAlv" className="text-xs font-bold text-stripe-dark">
                         sis. alv.
                       </label>
-                      {priceFormData.price && !isNaN(priceFormData.price) && (
-                        <div className="flex flex-col ml-auto pl-4 border-l border-gray-100">
-                          <span className="text-[8px] text-stripe-slate uppercase font-bold tracking-wider leading-none mb-1">
-                            {priceFormData.includeAlv ? 'Без ALV' : 'С ALV'}
-                          </span>
-                          <span className="text-xs font-black text-stripe-dark leading-none">
-                            €{priceFormData.includeAlv 
-                              ? (priceFormData.price / 1.255).toFixed(2) 
-                              : (priceFormData.price * 1.255).toFixed(2)}
-                          </span>
-                        </div>
-                      )}
                     </div>
                     <div className="flex space-x-2 pt-2">
                       <button
@@ -959,30 +966,6 @@ const OrderDetails = ({ user, userData, company }) => {
                         EUR {order.includeAlv && '(sis. alv.)'}
                       </span>
                     </div>
-                    {order.price && (
-                      <div className="mt-2 flex items-center space-x-4">
-                        <div className="flex flex-col">
-                          <span className="text-[10px] text-stripe-slate uppercase font-bold tracking-wider">
-                            {order.includeAlv ? 'Без ALV' : 'С ALV 25.5%'}
-                          </span>
-                          <span className="text-sm font-bold text-stripe-dark">
-                            €{order.includeAlv 
-                              ? (order.price / 1.255).toFixed(2) 
-                              : (order.price * 1.255).toFixed(2)}
-                          </span>
-                        </div>
-                        {order.includeAlv && (
-                          <div className="flex flex-col border-l pl-4 border-gray-100">
-                            <span className="text-[10px] text-stripe-slate uppercase font-bold tracking-wider">
-                              АЛВ 25.5%
-                            </span>
-                            <span className="text-sm font-bold text-stripe-dark">
-                              €{(order.price - order.price / 1.255).toFixed(2)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
                     <button
                       onClick={openPriceEdit}
                       className="mt-6 text-stripe-blue text-xs font-bold hover:underline flex items-center"
