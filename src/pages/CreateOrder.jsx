@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { orderService } from '../services/orderService';
 import { userService, USER_ROLES } from '../services/userService';
-import { Camera, X } from 'lucide-react';
+import { Camera, X, Plus } from 'lucide-react';
 
 const CreateOrder = ({ user, userData, activeBranchId, company }) => {
   const navigate = useNavigate();
@@ -32,22 +32,18 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
       }
     }
     if (name === 'includeAlv') {
-      const currentPrice = parseFloat(formData.price);
-      if (!isNaN(currentPrice)) {
-        let newPrice;
-        if (checked) {
-          // Если ставим галочку (включаем ALV), значит цена была без ALV, теперь должна быть с ALV
-          newPrice = (currentPrice * 1.255).toFixed(2);
-        } else {
-          // Если снимаем галочку, значит цена была с ALV, теперь должна быть без ALV
-          newPrice = (currentPrice / 1.255).toFixed(2);
-        }
-        setFormData((prev) => ({ ...prev, [name]: checked, price: newPrice }));
-        return;
-      }
+      return; // Мы больше не меняем это через инпут напрямую, будет кнопка
     }
     const finalValue = type === 'checkbox' ? checked : value;
     setFormData((prev) => ({ ...prev, [name]: finalValue }));
+  };
+
+  const handleAddAlv = () => {
+    const currentPrice = parseFloat(formData.price);
+    if (!isNaN(currentPrice)) {
+      const newPrice = (currentPrice * 1.255).toFixed(2);
+      setFormData((prev) => ({ ...prev, price: newPrice, includeAlv: true }));
+    }
   };
 
   const handlePhotoChange = (e) => {
@@ -212,24 +208,30 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
                   onChange={handleInputChange}
                 />
                 {formData.includeAlv && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-green-600 uppercase">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-green-600 uppercase bg-white pl-1">
                     sis. alv
                   </span>
                 )}
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="includeAlv"
-                name="includeAlv"
-                className="w-4 h-4 text-stripe-blue border-gray-300 rounded focus:ring-stripe-blue"
-                checked={formData.includeAlv}
-                onChange={handleInputChange}
-              />
-              <label htmlFor="includeAlv" className="text-sm font-bold text-stripe-dark">
-                sis. alv.
-              </label>
+            <div className="flex items-center">
+              <button
+                type="button"
+                onClick={handleAddAlv}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-stripe-dark rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
+              >
+                <Plus className="w-3 h-3" />
+                + alv (25.5%)
+              </button>
+              {formData.includeAlv && (
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, includeAlv: false }))}
+                  className="ml-2 text-[10px] text-red-500 hover:text-red-700 font-bold uppercase"
+                >
+                  убрать пометку
+                </button>
+              )}
             </div>
           </div>
         )}
