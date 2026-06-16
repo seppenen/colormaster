@@ -44,11 +44,8 @@ const OrderDetails = ({ user, userData, company }) => {
   const [editingCommentText, setEditingCommentText] = useState('');
   const [currentTimeInWork, setCurrentTimeInWork] = useState(0);
   const [users, setUsers] = useState([]);
-  const [isEditingWorkerPrice, setIsEditingWorkerPrice] = useState(false);
-  const [workerPriceData, setWorkerPriceData] = useState({
-    price: '',
-    workerId: ''
-  });
+  const [isEditingWorkers, setIsEditingWorkers] = useState(false);
+  const [workers, setWorkers] = useState([]);
   const [isEditingPrice, setIsEditingPrice] = useState(false);
   const [priceFormData, setPriceFormData] = useState({
     price: '',
@@ -89,10 +86,7 @@ const OrderDetails = ({ user, userData, company }) => {
 
         setOrder(data);
         if (data) {
-          setWorkerPriceData({
-            price: data.workerPrice || '',
-            workerId: data.workerId || ''
-          });
+          setWorkers(data.workers || (data.workerId ? [{ workerId: data.workerId, workerName: data.workerName, price: data.workerPrice || 0 }] : []));
         }
       } catch (err) {
         console.error(err);
@@ -150,37 +144,16 @@ const OrderDetails = ({ user, userData, company }) => {
     setIsEditingPrice(true);
   };
 
-  const handleWorkerPriceChange = async () => {
-    const { price, workerId } = workerPriceData;
-
-    if (!workerId) {
-      alert('Пожалуйста, выберите сотрудника');
-      return;
-    }
-
-    if (!price || isNaN(price) || Number(price) <= 0) {
-      alert('Пожалуйста, введите корректную сумму');
-      return;
-    }
-
-    const selectedWorker = users.find(u => u.uid === workerId);
-    const workerName = selectedWorker ? selectedWorker.name : '';
-
+  const handleWorkersChange = async () => {
     try {
-      await orderService.updateWorkerPrice(
-        id, 
-        Number(price), 
-        workerId, 
-        workerName, 
-        user, 
-        userData
-      );
-      const updatedOrder = await orderService.getOrder(id);
-      setOrder(updatedOrder);
-      setIsEditingWorkerPrice(false);
+      await orderService.updateWorkers(id, workers, user, userData);
+      setIsEditingWorkers(false);
+      const data = await orderService.getOrder(id);
+      setOrder(data);
+      setWorkers(data.workers || []);
     } catch (err) {
       console.error(err);
-      alert('Ошибка при сохранении зарплаты');
+      alert('Ошибка при обновлении работников');
     }
   };
 
@@ -985,41 +958,55 @@ const OrderDetails = ({ user, userData, company }) => {
                 </div>
               </div>
               <h2 className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest mb-1">
-                Зарплата работника
+                Зарплата работников
               </h2>
-              {isEditingWorkerPrice ? (
+              {isEditingWorkers ? (
                 <div className="space-y-4 animate-in fade-in duration-200">
-                  <div className="space-y-2">
-                    <label className="text-[10px] text-stripe-slate uppercase font-bold">Сумма (€)</label>
-                    <input
-                      type="number"
-                      className="stripe-input text-lg font-bold"
-                      value={workerPriceData.price}
-                      onChange={(e) => setWorkerPriceData(prev => ({ ...prev, price: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] text-stripe-slate uppercase font-bold">Сотрудник</label>
-                    <select
-                      className="stripe-input text-sm"
-                      value={workerPriceData.workerId}
-                      onChange={(e) => setWorkerPriceData(prev => ({ ...prev, workerId: e.target.value }))}
-                    >
-                      <option value="">Выберите сотрудника</option>
-                      {users.map(u => (
-                        <option key={u.uid} value={u.uid}>{u.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                  {workers.map((worker, index) => (
+                    <div key={index} className="flex gap-2">
+                       <input
+                        type="number"
+                        className="stripe-input text-sm flex-1"
+                        placeholder="Сумма"
+                        value={worker.price}
+                        onChange={(e) => {
+                          const newWorkers = [...workers];
+                          newWorkers[index].price = e.target.value;
+                          setWorkers(newWorkers);
+                        }}
+                      />
+                      <select
+                        className="stripe-input text-sm flex-1"
+                        value={worker.workerId}
+                        onChange={(e) => {
+                          const newWorkers = [...workers];
+                          newWorkers[index].workerId = e.target.value;
+                          newWorkers[index].workerName = users.find(u => u.uid === e.target.value)?.name || '';
+                          setWorkers(newWorkers);
+                        }}
+                      >
+                        <option value="">Выберите сотрудника</option>
+                        {users.map(u => (
+                          <option key={u.uid} value={u.uid}>{u.name}</option>
+                        ))}
+                      </select>
+                      <button onClick={() => setWorkers(workers.filter((_, i) => i !== index))} className="text-red-500">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <button onClick={() => setWorkers([...workers, { workerId: '', workerName: '', price: '' }])} className="text-stripe-blue text-xs font-bold flex items-center">
+                    <Plus className="w-3 h-3 mr-1" /> Добавить работника
+                  </button>
                   <div className="flex space-x-2 pt-2">
                     <button
-                      onClick={handleWorkerPriceChange}
+                      onClick={handleWorkersChange}
                       className="flex-1 bg-stripe-blue text-white py-2 rounded-lg text-xs font-bold hover:bg-blue-600 transition-colors"
                     >
                       Сохранить
                     </button>
                     <button
-                      onClick={() => setIsEditingWorkerPrice(false)}
+                      onClick={() => setIsEditingWorkers(false)}
                       className="flex-1 bg-gray-100 text-stripe-slate py-2 rounded-lg text-xs font-bold hover:bg-gray-200 transition-colors"
                     >
                       Отмена
@@ -1028,24 +1015,22 @@ const OrderDetails = ({ user, userData, company }) => {
                 </div>
               ) : (
                 <>
-                  <div className="flex items-baseline group-hover:scale-[1.02] transition-transform origin-left">
-                    <span className="text-4xl font-black text-stripe-dark">€{order.workerPrice || '0'}</span>
-                    <span className="ml-2 text-xs font-bold text-stripe-slate uppercase tracking-wider">
-                      EUR
-                    </span>
+                  <div className="flex flex-col gap-2">
+                    {workers.map((worker, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-stripe-dark">{worker.workerName || 'Неизвестен'}</span>
+                        <span className="font-black text-stripe-dark">€{worker.price || '0'}</span>
+                      </div>
+                    ))}
+                    {workers.length === 0 && <span className="text-sm text-stripe-slate">Нет работников</span>}
                   </div>
-                  {order.workerName && (
-                    <p className="mt-2 text-xs font-bold text-stripe-blue bg-blue-50 px-2 py-1 rounded-md inline-block">
-                      {order.workerName}
-                    </p>
-                  )}
                   {isAdmin && (
                     <button
-                      onClick={() => setIsEditingWorkerPrice(true)}
+                      onClick={() => setIsEditingWorkers(true)}
                       className="mt-6 text-stripe-blue text-xs font-bold hover:underline flex items-center"
                     >
                       <Edit2 className="w-3 h-3 mr-1" />
-                      Изменить зарплату
+                      Изменить работников
                     </button>
                   )}
                 </>

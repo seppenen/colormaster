@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { userService, USER_ROLES } from '../services/userService';
 import { orderService, ORDER_STATUS } from '../services/orderService';
+import { paymentService } from '../services/paymentService';
 import { Users, FileText, ChevronLeft, ChevronRight, Euro, Calendar, ExternalLink, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { format, startOfMonth, endOfMonth, eachMonthOfInterval, subMonths, isSameMonth } from 'date-fns';
@@ -10,16 +11,19 @@ import { formatDuration } from '../utils/orderUtils';
 const Reporting = ({ userData }) => {
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(new Date());
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const [usersData, ordersData] = await Promise.all([
+        const [usersData, ordersData, paymentsData] = await Promise.all([
           userService.getAllUsers(userData.companyId),
-          orderService.getOrders(userData.companyId)
+          orderService.getOrders(userData.companyId),
+          paymentService.getPayments(userData.companyId, format(selectedMonth, 'yyyy-MM'))
         ]);
         
         // If employee has a branch, they should only see users and orders from their branch
@@ -34,6 +38,7 @@ const Reporting = ({ userData }) => {
 
         setUsers(filteredUsers);
         setOrders(filteredOrders);
+        setPayments(paymentsData);
       } catch (err) {
         console.error('Error fetching data:', err);
       } finally {
@@ -41,7 +46,7 @@ const Reporting = ({ userData }) => {
       }
     };
     fetchData();
-  }, [userData.companyId]);
+  }, [userData.companyId, selectedMonth]);
 
   // Months for selection (last 12 months)
   const months = eachMonthOfInterval({
@@ -71,17 +76,24 @@ const Reporting = ({ userData }) => {
 
   const getFilteredOrders = (userId) => {
     return orders.filter(order => {
-      // Priority 1: explicitly assigned workerId
-      // Priority 2: fallback to history tracking
-      const workerId = order.workerId || getWorkerFromHistory(order);
+      // Priority 1: explicitly assigned worker in workers array
+      // Priority 2: fallback to legacy workerId or history tracking
+      const worker = order.workers?.find(w => w.workerId === userId);
+      const isLegacyWorker = !order.workers && (order.workerId === userId || getWorkerFromHistory(order) === userId);
       const orderDate = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
       
-      return workerId === userId && isSameMonth(orderDate, selectedMonth);
+      return (worker || isLegacyWorker) && isSameMonth(orderDate, selectedMonth);
     });
   };
 
-  const calculateTotalEarnings = (filteredOrders) => {
-    return filteredOrders.reduce((sum, order) => sum + (Number(order.workerPrice) || 0), 0);
+  const calculateTotalEarnings = (filteredOrders, userId) => {
+    return filteredOrders.reduce((sum, order) => {
+      if (order.workers) {
+        const worker = order.workers.find(w => w.workerId === userId);
+        return sum + (Number(worker?.price) || 0);
+      }
+      return sum + (Number(order.workerPrice) || 0);
+    }, 0);
   };
 
   const calculateTotalDuration = (userId, filteredOrders) => {
@@ -96,6 +108,14 @@ const Reporting = ({ userData }) => {
     }, 0);
   };
 
+  const isPaid = (userId) => payments.some(p => p.userId === userId);
+
+  const handlePaySalary = async (userId, amount) => {
+    await paymentService.recordPayment(userData.companyId, userId, format(selectedMonth, 'yyyy-MM'), amount);
+    const updatedPayments = await paymentService.getPayments(userData.companyId, format(selectedMonth, 'yyyy-MM'));
+    setPayments(updatedPayments);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-24">
@@ -106,7 +126,7 @@ const Reporting = ({ userData }) => {
 
   const selectedUser = users.find(u => u.uid === selectedUserId);
   const filteredOrders = selectedUserId ? getFilteredOrders(selectedUserId) : [];
-  const totalEarnings = calculateTotalEarnings(filteredOrders);
+  const totalEarnings = selectedUserId ? calculateTotalEarnings(filteredOrders, selectedUserId) : 0;
   const totalDuration = selectedUserId ? calculateTotalDuration(selectedUserId, filteredOrders) : 0;
 
   return (
@@ -228,6 +248,23 @@ const Reporting = ({ userData }) => {
                   </div>
                 </div>
               </div>
+
+              {/* Pay Salary Button */}
+              {totalEarnings > 0 && (
+                <div className="stripe-card p-4 flex items-center justify-between">
+                   <p className="text-sm font-bold text-stripe-dark">
+                     {isPaid(selectedUserId) ? 'Зарплата выплачена' : 'Зарплата не выплачена'}
+                   </p>
+                   {!isPaid(selectedUserId) && (
+                     <button
+                       onClick={() => handlePaySalary(selectedUserId, totalEarnings)}
+                       className="px-4 py-2 bg-stripe-blue text-white rounded-lg text-sm font-bold hover:bg-blue-600 transition-colors"
+                     >
+                       ВЫПЛАТИТЬ
+                     </button>
+                   )}
+                </div>
+              )}
 
               {/* Orders Table */}
               <div className="stripe-card overflow-hidden">

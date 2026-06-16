@@ -192,25 +192,26 @@ export const orderService = {
     });
   },
 
-  async updateWorkerPrice(id, newPrice, workerId, workerName, user, userData) {
+  async updateWorkers(id, workers, user, userData) {
     const orderRef = doc(db, COLLECTION_NAME, id);
     const orderSnap = await getDoc(orderRef);
     const orderData = orderSnap.data();
 
     const historyEntry = {
-      action: 'WORKER_PRICE_CHANGED',
-      from: orderData.workerPrice || 0,
-      to: newPrice,
-      workerName: workerName,
+      action: 'WORKERS_CHANGED',
+      from: orderData.workers || [],
+      to: workers,
       userId: user.uid,
       userName: userData?.name || user.displayName || user.email,
       timestamp: new Date(),
     };
 
     await updateDoc(orderRef, {
-      workerPrice: newPrice,
-      workerId: workerId || null,
-      workerName: workerName || null,
+      workers: workers,
+      // Keep workerPrice and workerId for backward compatibility? 
+      // Maybe not necessary if I update all usages. 
+      // Actually it's better to keep the data clean.
+      // But let's keep it for now as "legacy" field if needed.
       updatedAt: serverTimestamp(),
       history: [historyEntry, ...orderData.history],
     });
