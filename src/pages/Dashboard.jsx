@@ -30,6 +30,10 @@ const Dashboard = ({ user, userData, company, activeBranchId, onBranchChange }) 
       }
     };
     fetchOrders();
+
+    const interval = setInterval(fetchOrders, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
   }, [userData?.companyId, activeBranchId]);
 
   const filteredOrders = orders
