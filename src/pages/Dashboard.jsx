@@ -115,7 +115,7 @@ const Dashboard = ({ user, userData, company, activeBranchId, onBranchChange }) 
               </button>
             )}
             <div className="flex-1 md:flex-none min-w-[160px]">
-              {(userData?.role === USER_ROLES.ADMIN || !userData?.branchId) && (
+              {userData?.role === USER_ROLES.ADMIN && (
                 <BranchSelector 
                   company={company} 
                   activeBranchId={activeBranchId} 
