@@ -86,13 +86,22 @@ const Reporting = ({ userData }) => {
     });
   };
 
+  const getOrderWorkerEarning = (order, userId) => {
+    const worker = order.workers?.find(w => w.workerId === userId);
+    if (worker) {
+      return Number(worker.price) || 0;
+    }
+
+    if (order.workerId === userId) {
+      return Number(order.workerPrice) || 0;
+    }
+
+    return 0;
+  };
+
   const calculateTotalEarnings = (filteredOrders, userId) => {
     return filteredOrders.reduce((sum, order) => {
-      if (order.workers) {
-        const worker = order.workers.find(w => w.workerId === userId);
-        return sum + (Number(worker?.price) || 0);
-      }
-      return sum + (Number(order.workerPrice) || 0);
+      return sum + getOrderWorkerEarning(order, userId);
     }, 0);
   };
 
@@ -167,7 +176,7 @@ const Reporting = ({ userData }) => {
           <div className="space-y-2">
               {users.map((user) => {
                 const userOrders = getFilteredOrders(user.uid);
-                const userEarnings = calculateTotalEarnings(userOrders);
+                const userEarnings = calculateTotalEarnings(userOrders, user.uid);
                 const userDuration = calculateTotalDuration(user.uid, userOrders);
                 
                 return (
@@ -318,7 +327,9 @@ const Reporting = ({ userData }) => {
                               </span>
                             </td>
                             <td className="px-6 py-4 text-right">
-                              <span className="text-sm font-black text-stripe-dark">€{order.workerPrice || 0}</span>
+                              <span className="text-sm font-black text-stripe-dark">
+                                €{getOrderWorkerEarning(order, selectedUserId)}
+                              </span>
                             </td>
                           </tr>
                         ))}
