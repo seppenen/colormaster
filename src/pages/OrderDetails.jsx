@@ -115,6 +115,9 @@ const OrderDetails = ({ user, userData, company }) => {
 
   const handleStatusChange = async (newStatus) => {
     if (newStatus === order.status) return;
+    if (newStatus === ORDER_STATUS.LASKUTETTU) {
+      if (!window.confirm(`Вы уверены, что хотите установить статус "${ORDER_STATUS.LASKUTETTU}"?`)) return;
+    }
     try {
       await orderService.updateOrderStatus(id, newStatus, user, userData);
       const updatedOrder = await orderService.getOrder(id);
