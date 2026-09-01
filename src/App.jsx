@@ -15,6 +15,7 @@ import CreateCompany from './pages/CreateCompany';
 import Dashboard from './pages/Dashboard';
 import CreateOrder from './pages/CreateOrder';
 import OrderDetails from './pages/OrderDetails';
+import CalendarPage from './pages/CalendarPage';
 import Users from './pages/Users';
 import Reporting from './pages/Reporting';
 
@@ -129,6 +130,30 @@ function App() {
                   userData={userData} 
                   company={company}
                   activeBranchId={activeBranchId === 'all' ? '' : activeBranchId}
+                />
+              </Layout>
+            ) : (
+              <Navigate to="/" />
+            )
+          }
+        />
+
+        <Route
+          path="/calendar"
+          element={
+            user && company ? (
+              <Layout
+                company={company}
+                userData={userData}
+                isAdmin={userData?.role === USER_ROLES.ADMIN}
+                activeBranchId={activeBranchId}
+                onBranchChange={handleBranchChange}
+              >
+                <CalendarPage
+                  userData={userData}
+                  company={company}
+                  activeBranchId={activeBranchId}
+                  onBranchChange={handleBranchChange}
                 />
               </Layout>
             ) : (

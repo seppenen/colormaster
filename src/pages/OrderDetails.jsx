@@ -20,6 +20,7 @@ import {
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { getStatusBadge, formatDuration } from '../utils/orderUtils.jsx';
+import { toBookingDate, toDateTimeLocalValue, dateTimeLocalToISO } from '../utils/bookingDate';
 
 const OrderDetails = ({ user, userData, company }) => {
   const { id } = useParams();
@@ -36,7 +37,9 @@ const OrderDetails = ({ user, userData, company }) => {
     clientPhone: '',
     viitenumero: '',
     description: '',
+    bookingDateTime: '',
   });
+  const [editDateError, setEditDateError] = useState('');
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
   const [isAddingComment, setIsAddingComment] = useState(false);
   const [newCommentText, setNewCommentText] = useState('');
@@ -170,13 +173,29 @@ const OrderDetails = ({ user, userData, company }) => {
       description: order.description || '',
       branchId: order.branchId || '',
       includeAlv: order.includeAlv || false,
+      // У старых заказов поля брони нет — подставляем дату создания,
+      // чтобы обязательное поле не блокировало редактирование.
+      bookingDateTime: toDateTimeLocalValue(order.bookingDateTime || order.createdAt),
     });
+    setEditDateError('');
     setIsEditingDetails(true);
   };
 
   const handleSaveDetails = async () => {
+    const bookingISO = dateTimeLocalToISO(editFormData.bookingDateTime);
+    if (!bookingISO) {
+      setEditDateError('Укажите дату и время бронирования');
+      return;
+    }
+    setEditDateError('');
+
     try {
-      await orderService.updateOrderDetails(id, editFormData, user, userData);
+      await orderService.updateOrderDetails(
+        id,
+        { ...editFormData, bookingDateTime: bookingISO },
+        user,
+        userData
+      );
       const updatedOrder = await orderService.getOrder(id);
       setOrder(updatedOrder);
       setIsEditingDetails(false);
@@ -195,6 +214,9 @@ const OrderDetails = ({ user, userData, company }) => {
       } else {
         value = val;
       }
+    }
+    if (name === 'bookingDateTime') {
+      setEditDateError('');
     }
     const finalValue = type === 'checkbox' ? checked : value;
     setEditFormData((prev) => ({ ...prev, [name]: finalValue }));
@@ -455,6 +477,23 @@ const OrderDetails = ({ user, userData, company }) => {
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest">
+                      Дата и время записи
+                    </label>
+                    <input
+                      type="datetime-local"
+                      name="bookingDateTime"
+                      className={`stripe-input text-sm ${
+                        editDateError ? 'border-red-300 focus:ring-red-400' : ''
+                      }`}
+                      value={editFormData.bookingDateTime || ''}
+                      onChange={handleEditInputChange}
+                    />
+                    {editDateError && (
+                      <p className="text-xs font-bold text-red-600">{editDateError}</p>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest">
                       Viitenumero
                     </label>
                     <input
@@ -548,6 +587,18 @@ const OrderDetails = ({ user, userData, company }) => {
                       Viitenumero
                     </p>
                     <p className="text-lg font-bold text-stripe-dark">{order.viitenumero || '—'}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-stripe-slate uppercase font-bold tracking-widest">
+                      Дата и время записи
+                    </p>
+                    <p className="text-lg font-bold text-stripe-dark">
+                      {toBookingDate(order.bookingDateTime)
+                        ? format(toBookingDate(order.bookingDateTime), 'd MMMM yyyy, HH:mm', {
+                            locale: ru,
+                          })
+                        : '—'}
+                    </p>
                   </div>
                 </div>
 

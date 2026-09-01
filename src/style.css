@@ -39,6 +39,61 @@
   }
 }
 
+/* FullCalendar: подгоняем под стиль проекта (сам CSS подключается пакетом) */
+.booking-calendar .fc {
+  --fc-border-color: #f3f4f6;
+  --fc-today-bg-color: rgba(99, 91, 255, 0.06);
+  --fc-page-bg-color: #ffffff;
+  font-size: 0.875rem;
+}
+
+.booking-calendar .fc .fc-toolbar-title {
+  @apply text-lg md:text-xl font-bold text-stripe-dark capitalize;
+}
+
+.booking-calendar .fc .fc-button {
+  @apply bg-white border-gray-200 text-stripe-slate font-semibold shadow-stripe-sm capitalize;
+  --fc-button-text-color: #425466;
+  --fc-button-bg-color: #ffffff;
+  --fc-button-border-color: #e5e7eb;
+  --fc-button-hover-bg-color: #f6f9fc;
+  --fc-button-hover-border-color: #d1d5db;
+  --fc-button-active-bg-color: #635bff;
+  --fc-button-active-border-color: #635bff;
+}
+
+.booking-calendar .fc .fc-button:focus {
+  @apply shadow-none ring-2 ring-stripe-blue/30;
+}
+
+.booking-calendar .fc .fc-button-primary:not(:disabled).fc-button-active {
+  @apply text-white;
+}
+
+.booking-calendar .fc .fc-col-header-cell-cushion,
+.booking-calendar .fc .fc-daygrid-day-number {
+  @apply text-stripe-slate font-semibold no-underline;
+}
+
+.booking-calendar .fc .fc-event {
+  @apply cursor-pointer border-none rounded px-1 py-0.5 text-xs font-semibold;
+}
+
+.booking-calendar .fc .fc-daygrid-day:hover {
+  @apply bg-gray-50;
+}
+
+/* На мобильных тулбар переносится в колонку, чтобы кнопки не сжимались */
+@media (max-width: 640px) {
+  .booking-calendar .fc .fc-toolbar {
+    @apply flex-col gap-2 items-stretch;
+  }
+
+  .booking-calendar .fc .fc-toolbar-chunk {
+    @apply flex justify-center;
+  }
+}
+
 @media print {
   .print\:hidden {
     display: none !important;

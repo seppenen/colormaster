@@ -93,6 +93,22 @@ export const checkDelay = (order) => {
   return null;
 };
 
+// Цвета статусов для календаря. Соответствуют бейджам из getStatusBadge,
+// чтобы список заказов и календарь читались одинаково.
+export const STATUS_COLORS = {
+  [ORDER_STATUS.PENDING]: '#eab308',
+  [ORDER_STATUS.WAITING_PARTS]: '#f97316',
+  [ORDER_STATUS.AVAITING_WORK]: '#06b6d4',
+  [ORDER_STATUS.IN_PROGRESS]: '#635bff',
+  [ORDER_STATUS.READY]: '#22c55e',
+  [ORDER_STATUS.DELIVERED]: '#a855f7',
+  [ORDER_STATUS.LASKUTETTU]: '#6b7280',
+};
+
+export const DEFAULT_STATUS_COLOR = '#3b82f6';
+
+export const getStatusColor = (status) => STATUS_COLORS[status] || DEFAULT_STATUS_COLOR;
+
 export const formatDuration = (ms) => {
   if (!ms || ms < 0) return '0ч';
   const totalMinutes = Math.floor(ms / (1000 * 60));

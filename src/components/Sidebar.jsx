@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   FileBarChart,
+  CalendarDays,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
@@ -54,6 +55,14 @@ const Sidebar = ({
         <Link to="/" onClick={() => setIsSidebarOpen(false)} className={navLinkClasses('/')}>
           <LayoutDashboard className="w-5 h-5 mr-3" />
           Центр заказов
+        </Link>
+        <Link
+          to="/calendar"
+          onClick={() => setIsSidebarOpen(false)}
+          className={navLinkClasses('/calendar')}
+        >
+          <CalendarDays className="w-5 h-5 mr-3" />
+          Календарь
         </Link>
         {isAdmin && (
           <Link

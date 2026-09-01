@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { orderService } from '../services/orderService';
 import { userService, USER_ROLES } from '../services/userService';
 import { Camera, X, Plus } from 'lucide-react';
+import { dateParamToDateTimeLocal, dateTimeLocalToISO } from '../utils/bookingDate';
 
 const CreateOrder = ({ user, userData, activeBranchId, company }) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState([]);
   const [previews, setPreviews] = useState([]);
+  const [dateError, setDateError] = useState('');
   const [formData, setFormData] = useState({
     carModel: '',
     carNumber: '',
@@ -18,6 +21,8 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
     description: '',
     price: '',
     includeAlv: false,
+    // Дата может прийти из календаря: /create-order?date=2026-09-12
+    bookingDateTime: dateParamToDateTimeLocal(searchParams.get('date')),
     branchId: userData?.branchId || activeBranchId || '',
   });
 
@@ -33,6 +38,9 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
     }
     if (name === 'includeAlv') {
       return; // Мы больше не меняем это через инпут напрямую, будет кнопка
+    }
+    if (name === 'bookingDateTime') {
+      setDateError('');
     }
     const finalValue = type === 'checkbox' ? checked : value;
     setFormData((prev) => ({ ...prev, [name]: finalValue }));
@@ -63,10 +71,22 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const bookingISO = dateTimeLocalToISO(formData.bookingDateTime);
+    if (!bookingISO) {
+      setDateError('Укажите дату и время бронирования');
+      return;
+    }
+    if (new Date(bookingISO).getTime() < Date.now()) {
+      setDateError('Нельзя создать бронь на прошедшую дату');
+      return;
+    }
+    setDateError('');
+
     setLoading(true);
     try {
       await orderService.createOrder(
-        formData,
+        { ...formData, bookingDateTime: bookingISO },
         photos,
         user,
         userData.companyId,
@@ -141,6 +161,25 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
               value={formData.clientPhone}
               onChange={handleInputChange}
             />
+          </div>
+          <div className="space-y-1">
+            <label className="block text-sm font-bold text-stripe-dark">
+              Дата и время записи *
+            </label>
+            <input
+              type="datetime-local"
+              name="bookingDateTime"
+              required
+              className={`stripe-input ${dateError ? 'border-red-300 focus:ring-red-400' : ''}`}
+              value={formData.bookingDateTime}
+              // Заменяем стандартное сообщение браузера на текст проекта
+              onInvalid={(e) => e.target.setCustomValidity('Укажите дату и время бронирования')}
+              onChange={(e) => {
+                e.target.setCustomValidity('');
+                handleInputChange(e);
+              }}
+            />
+            {dateError && <p className="text-xs font-bold text-red-600">{dateError}</p>}
           </div>
           <div className="space-y-1">
             <label className="block text-sm font-bold text-stripe-dark">Viitenumero</label>

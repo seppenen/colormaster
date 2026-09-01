@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { orderService, ORDER_STATUS } from '../services/orderService';
 import { userService, USER_ROLES } from '../services/userService';
-import { Car, Clock, Search, AlertTriangle, Plus } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Car, Clock, Search, AlertTriangle, Plus, CalendarDays } from 'lucide-react';
+import { formatDistanceToNow, format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { toBookingDate } from '../utils/bookingDate';
 import { getStatusBadge, checkDelay } from '../utils/orderUtils.jsx';
 import BranchSelector from '../components/BranchSelector';
 
@@ -182,6 +183,14 @@ const Dashboard = ({ user, userData, company, activeBranchId, onBranchChange }) 
                           })
                         : ''}
                     </div>
+                    {toBookingDate(order.bookingDateTime) && (
+                      <div className="text-[11px] text-stripe-blue font-semibold flex items-center">
+                        <CalendarDays className="w-3 h-3 mr-1" />
+                        {format(toBookingDate(order.bookingDateTime), 'd MMM, HH:mm', {
+                          locale: ru,
+                        })}
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-col items-end space-y-1">
                     {getStatusBadge(order, isAdmin)}
@@ -273,6 +282,14 @@ const Dashboard = ({ user, userData, company, activeBranchId, onBranchChange }) 
                             })
                           : ''}
                       </div>
+                      {toBookingDate(order.bookingDateTime) && (
+                        <div className="text-[11px] text-stripe-blue font-semibold flex items-center mt-1">
+                          <CalendarDays className="w-3 h-3 mr-1" />
+                          {format(toBookingDate(order.bookingDateTime), 'd MMM, HH:mm', {
+                            locale: ru,
+                          })}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))

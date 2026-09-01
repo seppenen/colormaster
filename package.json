@@ -10,6 +10,11 @@
     "format": "prettier --write ."
   },
   "devDependencies": {
+    "@fullcalendar/core": "^6.1.21",
+    "@fullcalendar/daygrid": "^6.1.21",
+    "@fullcalendar/interaction": "^6.1.21",
+    "@fullcalendar/react": "^6.1.21",
+    "@fullcalendar/timegrid": "^6.1.21",
     "autoprefixer": "^10.5.0",
     "date-fns": "^4.1.0",
     "firebase": "^12.12.1",
