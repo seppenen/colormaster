@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "format": "prettier --write .",
     "cy:open": "cypress open",
-    "cy:run": "cypress run",
+    "cy:run": "cypress run --e2e",
     "test:e2e": "start-server-and-test 'npm run dev -- --host 127.0.0.1' http://127.0.0.1:5173 'cypress run --e2e'"
   },
   "devDependencies": {
