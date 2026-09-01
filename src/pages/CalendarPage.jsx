@@ -108,31 +108,33 @@ const CalendarPage = ({ userData, company, activeBranchId, onBranchChange }) => 
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-stripe-dark">
-            Календарь бронирований
-          </h1>
-          <p className="text-stripe-slate mt-1 text-sm">Записи клиентов по дате и времени</p>
-        </div>
+      <div className="stripe-card p-5 md:p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-stripe-dark">
+              Календарь бронирований
+            </h1>
+            <p className="text-stripe-slate mt-1 text-sm">Записи клиентов по дате и времени</p>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <button
-            onClick={() => navigate('/create-order')}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-stripe-blue text-white rounded-lg text-sm font-semibold hover:bg-opacity-90 transition-all shadow-stripe-sm min-w-[140px]"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Создать бронь</span>
-          </button>
-          {isAdmin && (
-            <div className="flex-1 md:flex-none min-w-[160px]">
-              <BranchSelector
-                company={company}
-                activeBranchId={activeBranchId}
-                onBranchChange={onBranchChange}
-              />
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <button
+              onClick={() => navigate('/create-order')}
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-stripe-blue text-white rounded-lg text-sm font-semibold hover:bg-opacity-90 transition-all shadow-stripe-sm min-w-[140px]"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Создать бронь</span>
+            </button>
+            {isAdmin && (
+              <div className="flex-1 md:flex-none min-w-[160px]">
+                <BranchSelector
+                  company={company}
+                  activeBranchId={activeBranchId}
+                  onBranchChange={onBranchChange}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -142,19 +144,25 @@ const CalendarPage = ({ userData, company, activeBranchId, onBranchChange }) => 
         </div>
       )}
 
-      {/* Легенда статусов */}
       <div className="stripe-card p-4">
-        <div className="flex flex-wrap gap-x-6 gap-y-3">
-          {LEGEND.map(({ status, color }) => (
-            <div key={status} className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: color }} />
-              <span className="text-xs font-semibold text-stripe-slate">{status}</span>
-            </div>
-          ))}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
+            {LEGEND.map(({ status, color }) => (
+              <div key={status} className="flex items-center gap-2 rounded-full bg-slate-50 px-2.5 py-1.5 ring-1 ring-slate-100">
+                <span className="w-3 h-3 rounded-sm shrink-0 shadow-sm" style={{ backgroundColor: color }} />
+                <span className="text-xs font-semibold text-slate-600">{status}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 ring-1 ring-indigo-100">
+            <CalendarDays className="w-3.5 h-3.5" />
+            {orders.length} броней
+          </div>
         </div>
       </div>
 
-      <div className="stripe-card p-3 md:p-6 booking-calendar">
+      <div className="stripe-card p-3 md:p-5 booking-calendar">
         {!error && events.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-6 text-center">
             <CalendarDays className="w-8 h-8 text-gray-200" />

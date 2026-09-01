@@ -1,15 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
+
 import { auth } from './services/firebase';
 import { userService, USER_ROLES } from './services/userService';
 import { companyService } from './services/companyService';
 
-// Components
 import Loading from './components/Loading';
 import Layout from './components/Layout';
 
-// Pages
 import Login from './pages/Login';
 import CreateCompany from './pages/CreateCompany';
 import Dashboard from './pages/Dashboard';
@@ -19,66 +18,105 @@ import CalendarPage from './pages/CalendarPage';
 import Users from './pages/Users';
 import Reporting from './pages/Reporting';
 
+const getStoredBranchId = () => localStorage.getItem('activeBranchId') || 'all';
+
+const buildDefaultUserData = (firebaseUser) => ({
+  name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+  email: firebaseUser.email,
+  role: USER_ROLES.EMPLOYEE,
+});
+
+const withLayout = (page, { company, userData, activeBranchId, handleBranchChange }) => (
+  <Layout
+    company={company}
+    userData={userData}
+    isAdmin={userData?.role === USER_ROLES.ADMIN}
+    activeBranchId={activeBranchId}
+    onBranchChange={handleBranchChange}
+  >
+    {page}
+  </Layout>
+);
+
 function App() {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [company, setCompany] = useState(null);
-  const [activeBranchId, setActiveBranchId] = useState(localStorage.getItem('activeBranchId') || 'all');
+  const [activeBranchId, setActiveBranchId] = useState(getStoredBranchId);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (userData && userData.role !== USER_ROLES.ADMIN && userData.branchId) {
-      setActiveBranchId(userData.branchId);
+    if (!userData || userData.role === USER_ROLES.ADMIN || !userData.branchId) {
+      return;
     }
+
+    setActiveBranchId(userData.branchId);
   }, [userData]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
-      if (user) {
-        setUser(user);
-        let data = await userService.getUser(user.uid);
-        if (!data) {
-          // If user doesn't exist in Firestore
-          data = {
-            name: user.displayName || user.email.split('@')[0],
-            email: user.email,
-            role: USER_ROLES.EMPLOYEE,
-          };
-          await userService.createUser(user.uid, data);
-        }
-        setUserData(data);
 
-        if (data.companyId) {
-          const compData = await companyService.getCompany(data.companyId);
-          setCompany(compData);
-          
-          // If activeBranchId is not set or not in branches, and we have branches, maybe default to first one?
-          // But 'all' is a good default too.
-        } else {
-          setCompany(null);
-        }
-      } else {
+      if (!firebaseUser) {
         setUser(null);
         setUserData(null);
         setCompany(null);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      try {
+        setUser(firebaseUser);
+
+        let userProfile = await userService.getUser(firebaseUser.uid);
+
+        if (!userProfile) {
+          userProfile = buildDefaultUserData(firebaseUser);
+          await userService.createUser(firebaseUser.uid, userProfile);
+        }
+
+        setUserData(userProfile);
+
+        if (userProfile.companyId) {
+          const companyData = await companyService.getCompany(userProfile.companyId);
+          setCompany(companyData);
+        } else {
+          setCompany(null);
+        }
+      } catch (error) {
+        console.error('Failed to initialize app state:', error);
+        setUser(null);
+        setUserData(null);
+        setCompany(null);
+      } finally {
+        setLoading(false);
+      }
     });
+
     return () => unsubscribe();
   }, []);
 
   const handleCompanyCreated = (newCompany) => {
     setCompany(newCompany);
-    setUserData((prev) => ({ ...prev, companyId: newCompany.id, role: USER_ROLES.ADMIN }));
+    setUserData((previousUserData) => ({
+      ...previousUserData,
+      companyId: newCompany.id,
+      role: USER_ROLES.ADMIN,
+    }));
   };
 
-  const handleBranchChange = (branchId) => {
-    setActiveBranchId(branchId);
-    localStorage.setItem('activeBranchId', branchId);
+  const handleBranchChange = (nextBranchId) => {
+    setActiveBranchId(nextBranchId);
+    localStorage.setItem('activeBranchId', nextBranchId);
   };
 
-  if (loading) return <Loading />;
+  if (loading) {
+    return <Loading />;
+  }
+
+  const isAuthenticated = Boolean(user);
+  const isCompanyReady = Boolean(company);
+  const isAdmin = userData?.role === USER_ROLES.ADMIN;
 
   return (
     <Router>
@@ -88,28 +126,23 @@ function App() {
         <Route
           path="/"
           element={
-            user ? (
-              !company ? (
+            isAuthenticated ? (
+              !isCompanyReady ? (
                 <CreateCompany user={user} onCompanyCreated={handleCompanyCreated} />
               ) : (
-                <Layout
-                  company={company}
-                  userData={userData}
-                  isAdmin={userData?.role === USER_ROLES.ADMIN}
-                  activeBranchId={activeBranchId}
-                  onBranchChange={handleBranchChange}
-                >
-                  <Dashboard 
-                    user={user} 
-                    userData={userData} 
-                    company={company} 
+                withLayout(
+                  <Dashboard
+                    user={user}
+                    userData={userData}
+                    company={company}
                     activeBranchId={activeBranchId}
                     onBranchChange={handleBranchChange}
-                  />
-                </Layout>
+                  />,
+                  { company, userData, activeBranchId, handleBranchChange }
+                )
               )
             ) : (
-              <Navigate to="/login" />
+              <Navigate to="/login" replace />
             )
           }
         />
@@ -117,23 +150,18 @@ function App() {
         <Route
           path="/create-order"
           element={
-            user && company ? (
-              <Layout
-                company={company}
-                userData={userData}
-                isAdmin={userData?.role === USER_ROLES.ADMIN}
-                activeBranchId={activeBranchId}
-                onBranchChange={handleBranchChange}
-              >
-                <CreateOrder 
-                  user={user} 
-                  userData={userData} 
+            isAuthenticated && isCompanyReady ? (
+              withLayout(
+                <CreateOrder
+                  user={user}
+                  userData={userData}
                   company={company}
                   activeBranchId={activeBranchId === 'all' ? '' : activeBranchId}
-                />
-              </Layout>
+                />,
+                { company, userData, activeBranchId, handleBranchChange }
+              )
             ) : (
-              <Navigate to="/" />
+              <Navigate to="/" replace />
             )
           }
         />
@@ -141,23 +169,18 @@ function App() {
         <Route
           path="/calendar"
           element={
-            user && company ? (
-              <Layout
-                company={company}
-                userData={userData}
-                isAdmin={userData?.role === USER_ROLES.ADMIN}
-                activeBranchId={activeBranchId}
-                onBranchChange={handleBranchChange}
-              >
+            isAuthenticated && isCompanyReady ? (
+              withLayout(
                 <CalendarPage
                   userData={userData}
                   company={company}
                   activeBranchId={activeBranchId}
                   onBranchChange={handleBranchChange}
-                />
-              </Layout>
+                />,
+                { company, userData, activeBranchId, handleBranchChange }
+              )
             ) : (
-              <Navigate to="/" />
+              <Navigate to="/" replace />
             )
           }
         />
@@ -165,18 +188,13 @@ function App() {
         <Route
           path="/order/:id"
           element={
-            user && company ? (
-              <Layout
-                company={company}
-                userData={userData}
-                isAdmin={userData?.role === USER_ROLES.ADMIN}
-                activeBranchId={activeBranchId}
-                onBranchChange={handleBranchChange}
-              >
-                <OrderDetails user={user} userData={userData} company={company} />
-              </Layout>
+            isAuthenticated && isCompanyReady ? (
+              withLayout(
+                <OrderDetails user={user} userData={userData} company={company} />,
+                { company, userData, activeBranchId, handleBranchChange }
+              )
             ) : (
-              <Navigate to="/" />
+              <Navigate to="/" replace />
             )
           }
         />
@@ -184,18 +202,15 @@ function App() {
         <Route
           path="/users"
           element={
-            user && company && userData?.role === USER_ROLES.ADMIN ? (
-              <Layout
-                company={company}
-                userData={userData}
-                isAdmin={userData?.role === USER_ROLES.ADMIN}
-                activeBranchId={activeBranchId}
-                onBranchChange={handleBranchChange}
-              >
-                <Users userData={userData} company={company} />
-              </Layout>
+            isAuthenticated && isCompanyReady && isAdmin ? (
+              withLayout(<Users userData={userData} company={company} />, {
+                company,
+                userData,
+                activeBranchId,
+                handleBranchChange,
+              })
             ) : (
-              <Navigate to="/" />
+              <Navigate to="/" replace />
             )
           }
         />
@@ -203,18 +218,15 @@ function App() {
         <Route
           path="/reporting"
           element={
-            user && company && userData?.role === USER_ROLES.ADMIN ? (
-              <Layout
-                company={company}
-                userData={userData}
-                isAdmin={userData?.role === USER_ROLES.ADMIN}
-                activeBranchId={activeBranchId}
-                onBranchChange={handleBranchChange}
-              >
-                <Reporting userData={userData} />
-              </Layout>
+            isAuthenticated && isCompanyReady && isAdmin ? (
+              withLayout(<Reporting userData={userData} />, {
+                company,
+                userData,
+                activeBranchId,
+                handleBranchChange,
+              })
             ) : (
-              <Navigate to="/" />
+              <Navigate to="/" replace />
             )
           }
         />
