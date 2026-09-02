@@ -858,6 +858,8 @@ const OrderDetails = ({ user, userData, company }) => {
                       src={photo}
                       className="w-full h-full object-cover"
                       alt={`Order photo ${index + 1}`}
+                      loading="lazy"
+                      decoding="async"
                     />
                     {isAdmin && (
                       <button

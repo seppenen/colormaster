@@ -10,7 +10,7 @@ import { toBookingDate } from '../utils/bookingDate';
 import { checkDelay, getStatusBadge } from '../utils/orderUtils.jsx';
 import BranchSelector from '../components/BranchSelector';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 20;
 
 const ORDER_PRIORITY = {
   [ORDER_STATUS.PENDING]: 1,
@@ -79,7 +79,14 @@ const Dashboard = ({ user, userData, company, activeBranchId, onBranchChange }) 
 
     fetchOrders();
 
-    const refreshInterval = setInterval(fetchOrders, 5 * 60 * 1000);
+    // На мобильных вкладка часто остаётся открытой в фоне часами (свёрнутое приложение).
+    // Не дёргаем Firestore, пока страница не видна — экономит трафик/батарею и убирает
+    // резкий фетч+ре-рендер большого списка заказов в момент разблокировки телефона.
+    const refreshInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchOrders();
+      }
+    }, 5 * 60 * 1000);
     return () => clearInterval(refreshInterval);
   }, [userData?.companyId, activeBranchId]);
 

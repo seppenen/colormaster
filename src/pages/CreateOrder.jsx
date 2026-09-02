@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { orderService } from '../services/orderService';
 import { userService, USER_ROLES } from '../services/userService';
 import { Camera, X, Plus } from 'lucide-react';
 import { dateParamToDateTimeLocal, dateTimeLocalToISO } from '../utils/bookingDate';
+import { compressImage } from '../utils/imageCompression';
 
 const CreateOrder = ({ user, userData, activeBranchId, company }) => {
   const navigate = useNavigate();
@@ -54,20 +55,53 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
     }
   };
 
-  const handlePhotoChange = (e) => {
+  const handlePhotoChange = async (e) => {
     const files = Array.from(e.target.files);
     const validFiles = files.filter((file) => file.type.startsWith('image/'));
+    if (validFiles.length === 0) return;
 
     setPhotos((prev) => [...prev, ...validFiles]);
 
-    const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
+    // Превью строим из уменьшенной копии, а не оригинала с камеры телефона (часто 3-8 МБ) —
+    // иначе браузер декодирует полноразмерное фото только чтобы показать миниатюру,
+    // что заметно подвешивает интерфейс на слабых мобильных устройствах.
+    const newPreviews = await Promise.all(
+      validFiles.map(async (file) => {
+        try {
+          const thumbnail = await compressImage(file, {
+            maxWidth: 400,
+            maxHeight: 400,
+            quality: 0.6,
+          });
+          return URL.createObjectURL(thumbnail);
+        } catch {
+          return URL.createObjectURL(file);
+        }
+      })
+    );
     setPreviews((prev) => [...prev, ...newPreviews]);
+    e.target.value = '';
   };
 
   const removePhoto = (index) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
-    setPreviews((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
   };
+
+  // Освобождаем blob-URL превью при закрытии страницы, иначе память накапливается
+  // за сессию (особенно заметно на мобильных с ограниченным ОЗУ).
+  const previewsRef = useRef(previews);
+  useEffect(() => {
+    previewsRef.current = previews;
+  }, [previews]);
+  useEffect(() => {
+    return () => {
+      previewsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -300,6 +334,8 @@ const CreateOrder = ({ user, userData, activeBranchId, company }) => {
                 <img
                   src={preview}
                   alt="Preview"
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover rounded-xl shadow-stripe-sm border border-gray-100"
                 />
                 <button

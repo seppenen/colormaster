@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -9,14 +9,17 @@ import { companyService } from './services/companyService';
 import Loading from './components/Loading';
 import Layout from './components/Layout';
 
-import Login from './pages/Login';
-import CreateCompany from './pages/CreateCompany';
-import Dashboard from './pages/Dashboard';
-import CreateOrder from './pages/CreateOrder';
-import OrderDetails from './pages/OrderDetails';
-import CalendarPage from './pages/CalendarPage';
-import Users from './pages/Users';
-import Reporting from './pages/Reporting';
+// Ленивая загрузка страниц: каждая страница попадает в свой чанк,
+// поэтому, например, Login не тянет за собой FullCalendar/Reporting/т.д.
+// Это особенно заметно на мобильных — меньше JS для скачивания и разбора при первом заходе.
+const Login = lazy(() => import('./pages/Login'));
+const CreateCompany = lazy(() => import('./pages/CreateCompany'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const CreateOrder = lazy(() => import('./pages/CreateOrder'));
+const OrderDetails = lazy(() => import('./pages/OrderDetails'));
+const CalendarPage = lazy(() => import('./pages/CalendarPage'));
+const Users = lazy(() => import('./pages/Users'));
+const Reporting = lazy(() => import('./pages/Reporting'));
 
 const getStoredBranchId = () => localStorage.getItem('activeBranchId') || 'all';
 
@@ -120,19 +123,59 @@ function App() {
 
   return (
     <Router>
-      <Routes>
-        <Route path="/login" element={<Login user={user} />} />
+      <Suspense fallback={<Loading />}>
+        <Routes>
+          <Route path="/login" element={<Login user={user} />} />
 
-        <Route
-          path="/"
-          element={
-            isAuthenticated ? (
-              !isCompanyReady ? (
-                <CreateCompany user={user} onCompanyCreated={handleCompanyCreated} />
+          <Route
+            path="/"
+            element={
+              isAuthenticated ? (
+                !isCompanyReady ? (
+                  <CreateCompany user={user} onCompanyCreated={handleCompanyCreated} />
+                ) : (
+                  withLayout(
+                    <Dashboard
+                      user={user}
+                      userData={userData}
+                      company={company}
+                      activeBranchId={activeBranchId}
+                      onBranchChange={handleBranchChange}
+                    />,
+                    { company, userData, activeBranchId, handleBranchChange }
+                  )
+                )
               ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+
+          <Route
+            path="/create-order"
+            element={
+              isAuthenticated && isCompanyReady ? (
                 withLayout(
-                  <Dashboard
+                  <CreateOrder
                     user={user}
+                    userData={userData}
+                    company={company}
+                    activeBranchId={activeBranchId === 'all' ? '' : activeBranchId}
+                  />,
+                  { company, userData, activeBranchId, handleBranchChange }
+                )
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+
+          <Route
+            path="/calendar"
+            element={
+              isAuthenticated && isCompanyReady ? (
+                withLayout(
+                  <CalendarPage
                     userData={userData}
                     company={company}
                     activeBranchId={activeBranchId}
@@ -140,97 +183,61 @@ function App() {
                   />,
                   { company, userData, activeBranchId, handleBranchChange }
                 )
+              ) : (
+                <Navigate to="/" replace />
               )
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
+            }
+          />
 
-        <Route
-          path="/create-order"
-          element={
-            isAuthenticated && isCompanyReady ? (
-              withLayout(
-                <CreateOrder
-                  user={user}
-                  userData={userData}
-                  company={company}
-                  activeBranchId={activeBranchId === 'all' ? '' : activeBranchId}
-                />,
-                { company, userData, activeBranchId, handleBranchChange }
+          <Route
+            path="/order/:id"
+            element={
+              isAuthenticated && isCompanyReady ? (
+                withLayout(<OrderDetails user={user} userData={userData} company={company} />, {
+                  company,
+                  userData,
+                  activeBranchId,
+                  handleBranchChange,
+                })
+              ) : (
+                <Navigate to="/" replace />
               )
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
+            }
+          />
 
-        <Route
-          path="/calendar"
-          element={
-            isAuthenticated && isCompanyReady ? (
-              withLayout(
-                <CalendarPage
-                  userData={userData}
-                  company={company}
-                  activeBranchId={activeBranchId}
-                  onBranchChange={handleBranchChange}
-                />,
-                { company, userData, activeBranchId, handleBranchChange }
+          <Route
+            path="/users"
+            element={
+              isAuthenticated && isCompanyReady && isAdmin ? (
+                withLayout(<Users userData={userData} company={company} />, {
+                  company,
+                  userData,
+                  activeBranchId,
+                  handleBranchChange,
+                })
+              ) : (
+                <Navigate to="/" replace />
               )
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
+            }
+          />
 
-        <Route
-          path="/order/:id"
-          element={
-            isAuthenticated && isCompanyReady ? (
-              withLayout(
-                <OrderDetails user={user} userData={userData} company={company} />,
-                { company, userData, activeBranchId, handleBranchChange }
+          <Route
+            path="/reporting"
+            element={
+              isAuthenticated && isCompanyReady && isAdmin ? (
+                withLayout(<Reporting userData={userData} />, {
+                  company,
+                  userData,
+                  activeBranchId,
+                  handleBranchChange,
+                })
+              ) : (
+                <Navigate to="/" replace />
               )
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-
-        <Route
-          path="/users"
-          element={
-            isAuthenticated && isCompanyReady && isAdmin ? (
-              withLayout(<Users userData={userData} company={company} />, {
-                company,
-                userData,
-                activeBranchId,
-                handleBranchChange,
-              })
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-
-        <Route
-          path="/reporting"
-          element={
-            isAuthenticated && isCompanyReady && isAdmin ? (
-              withLayout(<Reporting userData={userData} />, {
-                company,
-                userData,
-                activeBranchId,
-                handleBranchChange,
-              })
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-      </Routes>
+            }
+          />
+        </Routes>
+      </Suspense>
     </Router>
   );
 }
